@@ -25,7 +25,8 @@ def read(*names, **kwargs):
 setup(
     name='cygnet_common',
     version='0.1.0',
-    license='BSD',
+    license='NA',
+    # license='BSD',
     description='Common code used in the Cygnet project.',
     long_description='%s\n%s' % (read('README.rst'), re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))),
     author='Cygnus',
@@ -40,7 +41,7 @@ setup(
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
+        # 'License :: OSI Approved :: BSD License',
         'Operating System :: Unix',
         'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
