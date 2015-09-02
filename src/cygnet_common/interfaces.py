@@ -1,5 +1,5 @@
 
-from pyroute import IPDB
+from pyroute2 import IPDB
 from sarge import run
 
 class OVSInterface(object):
