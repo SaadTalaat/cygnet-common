@@ -6,10 +6,11 @@ class OVSInterface(object):
     '''
         Use an OVS client to query the database for current ovs network.
     '''
-    def __init__(self):
+    def __init__(self, interface):
         self.addr = None
         self.endpoints = []
         self.range_buckets = {}
+        self.interface = interface
         for i in range(1,255):
             self.range_buckets[i] = None
 
@@ -20,14 +21,26 @@ class OVSInterface(object):
     def initalize(self):
         ip = IPDB()
         try:
-            self.addr = list(ip.interfaces['eth1']['ipaddr'])[0]
+            ## Check if public interface is up
+            self.addr = list(ip.interfaces['br1']['ipaddr'])[0]
             self.addr = self.addr[0], str(self.addr[1])
+            self.interface.interfaces.append(('br1',self.addr))
+
         except Exception as e:
             print e
         finally:
             ip.release()
 
         self.range_buckets[int(self.addr[0].split(".")[-1])] = 1
+        return addr
+
+    def initContainerNetwork(self, count):
+        mask = "16"
+        addr = "10.1."+str(count)+".1"
+        addr2 = addr +"/"+ mask
+        run("ifconfig br2 "+addr2)
+        self.interface.interfaces.append(('br2',(self.addr,mask)))
+        return addr
 
     def addEndpoint(self, endpoint):
         run("./cmds/establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])

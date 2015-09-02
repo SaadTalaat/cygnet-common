@@ -20,11 +20,16 @@ class NetworkInterface(MutantDictBase):
     def __init__(self, interface_type):
         super(NetworkInterface, self).__init__()
         self.network = {0: OVSInterface,
-                99: None}.get(interface_type, 99)()
-        self.network.initialize()
+                99: None}.get(interface_type, 99)(self)
         self['endpoints'] = []
         self['containers'] = []
         self['interfaces'] = []
+
+    def initialize(self):
+        return self.network.initialize()
+
+    def initContainerNetwork(self, count):
+        return self.network.initContainerNetwork(count)
 
     ##### Functionality oriented methods #####
     def addEndpoint(self, endpoint):
@@ -58,7 +63,13 @@ class NetworkInterface(MutantDictBase):
     ##### Type oriented methods ######
     def __keytransform__(self, key):
         key = key.lower()
-        if key.find("interfaces") >=0 or key.find("endpoints") >= 0 or key.find("containers") >= 0:
+        allowed_keys = ["interfaces","endpoints","containers"]
+        try:
+            index = [n.find(key) for n in allowed_keys].index(0)
+        except ValueError as e:
+            index = -1
+
+        if index >= 0 and len(key) == len(allowed_keys[index]):
             return key
         else:
             raise NameError("NetworkInterface: Illegal key")
