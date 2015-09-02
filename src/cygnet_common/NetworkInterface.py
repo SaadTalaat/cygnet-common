@@ -13,6 +13,11 @@ class NetworkInterface(MutantDictBase):
     Network Types:
     - OpenvSwitch
 
+
+    TODO:
+        mirror components managed by the cygnet_common to
+        the etcd server. For which we'll need to code another etcd client
+        :
     '''
     ## Types
     OVS = 0
