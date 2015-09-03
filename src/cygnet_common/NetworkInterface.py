@@ -1,8 +1,7 @@
 
 from interfaces import OVSInterface
-from MutantDict import MutantDictBase
 
-class NetworkInterface(MutantDictBase):
+class NetworkInterface(dict):
 
     '''
     Network components should be defined the following sets:
@@ -19,16 +18,37 @@ class NetworkInterface(MutantDictBase):
         the etcd server. For which we'll need to code another etcd client
         :
     '''
-    ## Types
-    OVS = 0
-
     def __init__(self, interface_type):
-        super(NetworkInterface, self).__init__()
-        self.network = {0: OVSInterface,
-                99: None}.get(interface_type, 99)(self)
-        self['endpoints'] = []
-        self['containers'] = []
-        self['interfaces'] = []
+        self.network = (getattr(self.interfaces, kwargs['interface_class']))(**kwargs)
+        self['endpoints'] = kwargs['endpoints']
+        self['containers'] = kwargs['containers']
+        self['interfaces'] = kwargs['interfaces']
+
+    def __getattribute__(self, key, *args):
+        try:
+            return dict.__getattribute__(self, key)
+        except AttributeError as e:
+            if key in self:
+                return self[key]
+            else:
+                raise e
+
+    def __setattr__(self, key, value):
+        try:
+            dict.__setattr__(self, key, value)
+        except AttributeError as e:
+            if key in self:
+                self[key] = value
+            else:
+                raise e
+    def __delattr__(self, key):
+        try:
+            dict.__delattr__(self, key)
+        except AttributeError as e:
+            if key in self:
+                del self[key]
+            else:
+                raise e
 
     def initialize(self):
         return self.network.initialize()
