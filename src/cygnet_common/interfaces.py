@@ -7,7 +7,6 @@ class OVSInterface(dict):
         Use an OVS client to query the database for current ovs network.
     '''
     def __init__(self, interface, **kwargs):
-        dict.__init__(self,kwargs)
         self.addr = None
         self.range_buckets = {}
         self.interface = interface
