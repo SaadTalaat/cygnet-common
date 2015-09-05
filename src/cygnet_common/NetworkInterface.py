@@ -1,5 +1,4 @@
-from interfaces import OVSInterface
-
+import interfaces
 class NetworkInterface(dict):
 
     '''
@@ -18,13 +17,14 @@ class NetworkInterface(dict):
         :
     '''
     def __init__(self, **kwargs):
-        self.network = (getattr(self.interfaces, kwargs['interface_class']))(**kwargs)
         self['endpoints'] = kwargs['endpoints']
         self['containers'] = kwargs['containers']
         self['interfaces'] = kwargs['interfaces']
+        self.network = (getattr(interfaces, kwargs['interface_class']))(self, **kwargs)
 
     def __getattribute__(self, key, *args):
         try:
+            print key
             return dict.__getattribute__(self, key)
         except AttributeError as e:
             if key in self:
@@ -49,8 +49,8 @@ class NetworkInterface(dict):
             else:
                 raise e
 
-    def initialize(self):
-        return self.network.initialize()
+    def initalize(self):
+        return self.network.initalize()
 
     def initContainerNetwork(self, count):
         return self.network.initContainerNetwork(count)

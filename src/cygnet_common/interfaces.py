@@ -57,7 +57,8 @@ class OVSInterface(dict):
             print e
         finally:
             ip.release()
-
+        print self.range_buckets, "\n", self.addr
+        print self.range_buckets[int(self.addr[0].split(".")[-1])], int(self.addr[0].split("."))
         self.range_buckets[int(self.addr[0].split(".")[-1])] = 1
         return addr
 
