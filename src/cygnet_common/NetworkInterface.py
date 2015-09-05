@@ -17,7 +17,7 @@ class NetworkInterface(dict):
         the etcd server. For which we'll need to code another etcd client
         :
     '''
-    def __init__(self, kwargs):
+    def __init__(self, **kwargs):
         self.network = (getattr(self.interfaces, kwargs['interface_class']))(**kwargs)
         self['endpoints'] = kwargs['endpoints']
         self['containers'] = kwargs['containers']
