@@ -49,7 +49,7 @@ class OVSInterface(dict):
         ip = IPDB()
         try:
             ## Check if public interface is up
-            self.addr = list(ip.interfaces['br1']['ipaddr'])[0]
+            self.addr = list(ip.interfaces['br1']['ipaddr'])[len(ip.interfaces['br1']['ipaddr']) -1]
             self.addr = self.addr[0], str(self.addr[1])
             self.interface.interfaces.append(('br1',self.addr))
             self.interfaces.append(('br1',self.addr))
