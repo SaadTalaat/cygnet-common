@@ -1,6 +1,7 @@
 
 from pyroute2 import IPRoute, IPDB
 from sarge import run
+from cygnet_common.Structures import CallbackList
 
 class OVSInterface(dict):
     '''
@@ -12,9 +13,18 @@ class OVSInterface(dict):
         self.interface = interface
         for i in range(1,255):
             self.range_buckets[i] = None
-        self['endpoints'] = kwargs['endpoints']
-        self['containers'] = kwargs['containers']
+        self['endpoints'] = CallbackList(kwargs['endpoints'])
+        self['containers'] = CallbackList(kwargs['containers'])
         self['interfaces'] = kwargs['interfaces']
+
+        ## Add callbacks
+        self.endpoints.addCallback(list.append,self.addEndpoint)
+        self.endpoints.addCallback(list.remove,self.removeEndpoint)
+        self.endpoints.addCallback(list.pop, self.removeEndpoint)
+
+        self.containers.addCallback(list.append, self.connectContainer)
+        self.containers.addCallback(list.remove, self.disconnectContainer)
+        self.containers.addCallback(list.pop, self.disconnectContainer)
         ####
         # Should read database here
         ####
@@ -60,7 +70,7 @@ class OVSInterface(dict):
         print self.range_buckets, "\n", self.addr
         print self.range_buckets[int(self.addr[0].split(".")[-1])], int(self.addr[0].split("."))
         self.range_buckets[int(self.addr[0].split(".")[-1])] = 1
-        return addr
+        return self.addr
 
     def initContainerNetwork(self, count):
         ip = IPRoute()
@@ -75,28 +85,37 @@ class OVSInterface(dict):
         self.interfaces.append(('br2',(self.addr,str(mask))))
         return addr
 
-    def addEndpoint(self, endpoint):
-        run("./cmds/establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
-        self.endpoints.append(endpoint)
+    def addEndpoint(self, endpoints):
+        for endpoint in endpoints:
+            run("./cmds/establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
+            #self.endpoints.append(endpoint)
 
-    def removeEndpoint(self, endpoint):
-        run("ovs-vsctl del-port gre"+str(endpoint[1]))
-        del self.endpoints[self.endpoints.index(endpoint)]
+    def removeEndpoint(self, endpoints):
+        for e in endpoints:
+            endpoint = None
+            if isinstance(endpoint,int):
+              endpoint = self.endpoints[e]
+            else:
+                endpoint = e
+            run("ovs-vsctl del-port gre"+str(endpoint[1]))
+            #del self.endpoints[self.endpoints.index(endpoint)]
 
-    def connectContainer(self, container):
-        addr = str(container["Address"])
-        containerId = str(container["Id"])
-        addr_idx = int(addr.split("/")[0].split(".")[-1])
-        available = (self.range_buckets[addr_idx] == None)
-        if available:
-            self.range_buckets[addr_idx] = containerId
-            run("pipework br2 -i eth1 "+ containerId + " " + addr)
-        else:
-            print "Error connecting container",containerId+": Address Already taken by container: ",self.range_buckets[addr_idx]
-        self.containers.append(container)
+    def connectContainer(self, containers):
+        for container in containers:
+            addr = str(container["Address"])
+            containerId = str(container["Id"])
+            addr_idx = int(addr.split("/")[0].split(".")[-1])
+            available = (self.range_buckets[addr_idx] == None)
+            if available:
+                self.range_buckets[addr_idx] = containerId
+                run("pipework br2 -i eth1 "+ containerId + " " + addr)
+            else:
+                print "Error connecting container",containerId+": Address Already taken by container: ",self.range_buckets[addr_idx]
+            #self.containers.append(container)
 
-    def disconnectContainer(self, container):
-        addr = str(container["Address"])
-        addr_idx = int(addr.split("/")[0].split(".")[-1])
-        self.range_buckets[addr_idx]= None
-        del self.containers[self.containers.index(container)]
+    def disconnectContainer(self, containers):
+        for container in containers:
+            addr = str(container["Address"])
+            addr_idx = int(addr.split("/")[0].split(".")[-1])
+            self.range_buckets[addr_idx]= None
+            #del self.containers[self.containers.index(container)]
