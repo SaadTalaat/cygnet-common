@@ -6,9 +6,9 @@ def hook_function(func):
     return hook
 
 class CallbackList(list):
-    append  = hook_function(self.append)
-    remove  = hook_function(self.remove)
-    pop     = hook_function(self.pop)
+    append  = hook_function(list.append)
+    remove  = hook_function(list.remove)
+    pop     = hook_function(list.pop)
 
     def __init__(self, *args):
         list.__init__(self,*args)
@@ -17,6 +17,7 @@ class CallbackList(list):
     def addCallback(self, func, callback):
         if not self.__callbacks__.has_key(func):
             self.__callbacks__[func.__name__] = [callback]
+            return
         self.__callbacks__[func.__name__].append(callback)
 
     def removeCallback(self, func, callback):

@@ -70,21 +70,22 @@ class OVSInterface(dict):
         ip = IPRoute()
         mask = 16
         addr = "10.1."+str(count)+".1"
-        run("ifconfig br2 "+addr2)
+        #run("ifconfig br2 "+addr2)
         ip.addr('add',
                 index=(ip.link_lookup(ifname='br2')),
-                address='addr',
+                address=addr,
                 mask=mask)
         self.interface.interfaces.append(('br2',(self.addr,mask)))
         self.interfaces.append(('br2',(self.addr,str(mask))))
         return addr
 
-    def addEndpoint(self, endpoints):
+    def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
-            run("./cmds/establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
+            run("ovs-vsctl add-port br2 gre"+str(endpoint[1])+" -- set Interface gre"+str(endpoint[1])+" type=gre options:remote_ip="+(endpoint[2]))
+            #run("establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
             #self.endpoints.append(endpoint)
 
-    def removeEndpoint(self, endpoints):
+    def removeEndpoint(self, *endpoints):
         for e in endpoints:
             endpoint = None
             if isinstance(endpoint,int):
@@ -94,7 +95,7 @@ class OVSInterface(dict):
             run("ovs-vsctl del-port gre"+str(endpoint[1]))
             #del self.endpoints[self.endpoints.index(endpoint)]
 
-    def connectContainer(self, containers):
+    def connectContainer(self, *containers):
         for container in containers:
             addr = str(container["Address"])
             containerId = str(container["Id"])
@@ -107,7 +108,7 @@ class OVSInterface(dict):
                 print "Error connecting container",containerId+": Address Already taken by container: ",self.range_buckets[addr_idx]
             #self.containers.append(container)
 
-    def disconnectContainer(self, containers):
+    def disconnectContainer(self, *containers):
         for c in containers:
             if isinstance(c,int):
                 container = self.containers[c]
