@@ -13,18 +13,11 @@ class OVSInterface(dict):
         self.interface = interface
         for i in range(1,255):
             self.range_buckets[i] = None
-        self['endpoints'] = CallbackList(kwargs['endpoints'])
-        self['containers'] = CallbackList(kwargs['containers'])
+        self['endpoints'] = kwargs['endpoints']
+        self['containers'] = kwargs['containers']
         self['interfaces'] = kwargs['interfaces']
 
         ## Add callbacks
-        self.endpoints.addCallback(list.append,self.addEndpoint)
-        self.endpoints.addCallback(list.remove,self.removeEndpoint)
-        self.endpoints.addCallback(list.pop, self.removeEndpoint)
-
-        self.containers.addCallback(list.append, self.connectContainer)
-        self.containers.addCallback(list.remove, self.disconnectContainer)
-        self.containers.addCallback(list.pop, self.disconnectContainer)
         ####
         # Should read database here
         ####
@@ -115,7 +108,11 @@ class OVSInterface(dict):
             #self.containers.append(container)
 
     def disconnectContainer(self, containers):
-        for container in containers:
+        for c in containers:
+            if isinstance(c,int):
+                container = self.containers[c]
+            else:
+                container = c
             addr = str(container["Address"])
             addr_idx = int(addr.split("/")[0].split(".")[-1])
             self.range_buckets[addr_idx]= None

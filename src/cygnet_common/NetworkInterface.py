@@ -1,4 +1,5 @@
 import interfaces
+from cygnet_common.Structures import CallbackList
 class NetworkInterface(dict):
 
     '''
@@ -17,10 +18,20 @@ class NetworkInterface(dict):
         :
     '''
     def __init__(self, **kwargs):
+        kwargs['endpoints'] = CallbackList(kwargs['endpoints'])
+        kwargs['endpoints'] = CallbackList(kwatgs['containers'])
         self['endpoints'] = kwargs['endpoints']
         self['containers'] = kwargs['containers']
         self['interfaces'] = kwargs['interfaces']
         self.network = (getattr(interfaces, kwargs['interface_class']))(self, **kwargs)
+
+        self.endpoints.addCallback(list.append,self.addEndpoint)
+        self.endpoints.addCallback(list.remove,self.removeEndpoint)
+        self.endpoints.addCallback(list.pop, self.removeEndpoint)
+
+        self.containers.addCallback(list.append, self.connectContainer)
+        self.containers.addCallback(list.remove, self.disconnectContainer)
+        self.containers.addCallback(list.pop, self.disconnectContainer)
 
     def __getattribute__(self, key, *args):
         try:
@@ -56,30 +67,35 @@ class NetworkInterface(dict):
         return self.network.initContainerNetwork(count)
 
     ##### Functionality oriented methods #####
-    def addEndpoint(self, endpoint):
-        if self.endpoints.index[endpoint] >= 0:
-            print "NetworkInterface: Communication with remote endpoint already established"
-            return
-        self.endpoints.append(endpoint)
-        self.network.addEndpoint(endpoint)
+    def addEndpoint(self, endpoints):
+        for endpoint in endpoints:
+            if self.endpoints.index(endpoint) >= 0:
+                print "NetworkInterface: Communication with remote endpoint already established"
+                endpoints.remove(endpoint)
+        self.network.addEndpoint(endpoints)
 
-    def removeEndpoint(self, endpoint):
-        if self.endpoints.index[endpoint] < 0:
-            print "NetworkInterface: Cannot remove non-existent endpoint"
-            return
-        self.network.removeEndpoint(endpoint)
-        del self.endpoints[self.endpoints.index(endpoint)]
+    def removeEndpoint(self, endpoints):
+        for endpoint in endpoints:
+            if isinstance(endpoint,int) and (len(self.endpoints) < endpoint or endpoint < 0):
+                endpoints.remove(endpoint)
+            elif self.endpoints.index(endpoint) < 0:
+                print "NetworkInterface: Cannot remove non-existent endpoint"
+                endpoints.remove(endpoint)
+        self.network.removeEndpoint(endpoints)
 
 
-    def connectContainer(self, container):
-        if self.containers.index[container] >= 0:
-            print "NetworkInterface: Container already connected"
-            return
-        self.containers.append(container)
-        self.network.connectContainer(container)
+    def connectContainer(self, containers):
+        for container in containers:
+            if self.containers.index(container) >= 0:
+                print "NetworkInterface: Container already connected"
+                containers.remove(container)
+        self.network.connectContainer(containers)
 
-    def disconnectContainer(self, container):
-        if self.containers.index[container] < 0:
-            print "NetworkInterface: Cannot disconnect container, container isn't connected in the first place"
-            return
-        del self.containers[self.containers.index(container)]
+    def disconnectContainer(self, containers):
+        for container in containers:1
+            if isinstance(container,int) and (len(self.containers) < container or container < 0):
+                containers.remove(container)
+            elif self.containers.index(container) < 0:
+                print "NetworkInterface: Cannot disconnect container, container isn't connected in the first place"
+                containers.remove(container)
+        self.network.disconnectContainer(containers)
