@@ -59,16 +59,17 @@ class OVSInterface(dict):
         ip = IPDB()
         try:
             ## Check if public interface is up
-            self.addr = list(ip.interfaces['br1']['ipaddr'])[len(ip.interfaces['br1']['ipaddr']) -1]
+            try:
+                self.addr = list(ip.interfaces['br1']['ipaddr'])[0]
+            except:
+                self.addr = list(ip.interfaces['br1']['ipaddr'])[1]
             self.addr = self.addr[0], str(self.addr[1])
-            self.interface.interfaces.append(('br1',self.addr))
+            #self.interface.interfaces.append(('br1',self.addr))
             self.interfaces.append(('br1',self.addr))
         except Exception as e:
             print e
         finally:
             ip.release()
-        print self.range_buckets, "\n", self.addr
-        print self.range_buckets[int(self.addr[0].split(".")[-1])], int(self.addr[0].split("."))
         self.range_buckets[int(self.addr[0].split(".")[-1])] = 1
         return self.addr
 
