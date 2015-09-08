@@ -75,7 +75,6 @@ class OVSInterface(dict):
                 index=(ip.link_lookup(ifname='br2')),
                 address=addr,
                 mask=mask)
-        self.interface.interfaces.append(('br2',(self.addr,mask)))
         self.interfaces.append(('br2',(self.addr,str(mask))))
         return addr
 
