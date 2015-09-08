@@ -81,11 +81,11 @@ class OVSInterface(dict):
         ip = IPRoute()
         mask = 16
         addr = "10.1."+str(count)+".1"
-        #run("ifconfig br2 "+addr2)
         ip.addr('add',
                 index=(ip.link_lookup(ifname='br2')),
                 address=addr,
                 mask=mask)
+        run("ifconfig br2 up")
         self.interfaces.append(('br2',(self.addr,str(mask))))
         return addr
 
