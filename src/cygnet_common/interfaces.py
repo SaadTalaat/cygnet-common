@@ -91,8 +91,8 @@ class OVSInterface(dict):
 
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
-            run("ovs-vsctl add-port br2 gre"+len(self.endpoints)+  
-                    " -- set Interface gre"+len(self.endpoints)+" type=gre options:remote_ip="+(endpoint))
+            run("ovs-vsctl add-port br2 gre"+str(len(self.endpoints))+  
+                    " -- set Interface gre"+str(len(self.endpoints))+" type=gre options:remote_ip="+(endpoint))
             #run("establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
             #self.endpoints.append(endpoint)
 
