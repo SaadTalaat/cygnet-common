@@ -81,7 +81,8 @@ class OVSInterface(dict):
 
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
-            run("ovs-vsctl add-port br2 gre"+str(endpoint[1])+" -- set Interface gre"+str(endpoint[1])+" type=gre options:remote_ip="+(endpoint[2]))
+            run("ovs-vsctl add-port br2 gre"+str(endpoints.index(endpoint))+  
+                " -- set Interface gre"+str(endpoints.index(endpoint))+" type=gre options:remote_ip="+(endpoint))
             #run("establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
             #self.endpoints.append(endpoint)
 
@@ -92,7 +93,7 @@ class OVSInterface(dict):
               endpoint = self.endpoints[e]
             else:
                 endpoint = e
-            run("ovs-vsctl del-port gre"+str(endpoint[1]))
+            run("ovs-vsctl del-port gre"+str(endpoints.index(endpoint)))
             #del self.endpoints[self.endpoints.index(endpoint)]
 
     def connectContainer(self, *containers):
