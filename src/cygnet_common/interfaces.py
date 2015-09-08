@@ -3,6 +3,19 @@ from pyroute2 import IPRoute, IPDB
 from sarge import run
 from cygnet_common.Structures import CallbackList
 
+def __getIPv4Addr__(addr_list):
+    '''
+    return first ip4 addr it hits
+    '''
+    assert isinstance(addr_list,list)
+    for addr in addr_list:
+        try:
+            assert (len(addr[0].split(".")) == 4)
+            return addr
+        except:
+            continue
+    return None
+
 class OVSInterface(dict):
     '''
         Use an OVS client to query the database for current ovs network.
@@ -52,10 +65,8 @@ class OVSInterface(dict):
         ip = IPDB()
         try:
             ## Check if public interface is up
-            try:
-                self.addr = list(ip.interfaces['br1']['ipaddr'])[0]
-            except:
-                self.addr = list(ip.interfaces['br1']['ipaddr'])[1]
+            self.addr = __getIPv4Addr__(list(ip.interfaces.br1.ipaddr))
+            print list(ip.interfaces['br1']['ipaddr'])
             self.addr = self.addr[0], str(self.addr[1])
             #self.interface.interfaces.append(('br1',self.addr))
             self.interfaces.append(('br1',self.addr))
@@ -80,8 +91,8 @@ class OVSInterface(dict):
 
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
-            run("ovs-vsctl add-port br2 gre"+str(endpoints.index(endpoint))+  
-                " -- set Interface gre"+str(endpoints.index(endpoint))+" type=gre options:remote_ip="+(endpoint))
+            run("ovs-vsctl add-port br2 gre"+len(self.endpoints)+  
+                    " -- set Interface gre"+len(self.endpoints)+" type=gre options:remote_ip="+(endpoint))
             #run("establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
             #self.endpoints.append(endpoint)
 
