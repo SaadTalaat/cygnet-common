@@ -93,8 +93,9 @@ class NetworkInterface(dict):
     def disconnectContainer(self, *containers):
         for container in containers:
             if isinstance(container,int) and (len(self.containers) < container or container < 0):
-                containers.remove(container)
-            elif self.containers.index(container) < 0:
+                print "NetworkInterface: Cannot disconnect container, container isn't connected in the first place"
+                containers.pop(container)
+            elif not isinstance(container,int) and self.containers.index(container) < 0:
                 print "NetworkInterface: Cannot disconnect container, container isn't connected in the first place"
                 containers.remove(container)
         self.network.disconnectContainer(*containers)
