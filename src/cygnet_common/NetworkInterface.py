@@ -76,8 +76,8 @@ class NetworkInterface(dict):
     def removeEndpoint(self, *endpoints):
         for endpoint in endpoints:
             if isinstance(endpoint,int) and (len(self.endpoints) < endpoint or endpoint < 0):
-                endpoints.remove(endpoint)
-            elif self.endpoints.index(endpoint) < 0:
+                endpoints.pop(endpoint)
+            elif not isinstance(endpoint,int) and self.endpoints.index(endpoint) < 0:
                 print "NetworkInterface: Cannot remove non-existent endpoint"
                 endpoints.remove(endpoint)
         self.network.removeEndpoint(*endpoints)

@@ -23,8 +23,10 @@ class OVSInterface(dict):
     def __init__(self, interface, **kwargs):
         self.addr = None
         self.range_buckets = {}
+        self.tunnel_bucket = {}
         self.interface = interface
         for i in range(1,255):
+            self.tunnel_bucket[i] = None
             self.range_buckets[i] = None
         self['endpoints'] = kwargs['endpoints']
         self['containers'] = kwargs['containers']
@@ -66,7 +68,6 @@ class OVSInterface(dict):
         try:
             ## Check if public interface is up
             self.addr = __getIPv4Addr__(list(ip.interfaces.br1.ipaddr))
-            print list(ip.interfaces['br1']['ipaddr'])
             self.addr = self.addr[0], str(self.addr[1])
             #self.interface.interfaces.append(('br1',self.addr))
             self.interfaces.append(('br1',self.addr))
@@ -80,7 +81,7 @@ class OVSInterface(dict):
     def initContainerNetwork(self, count):
         ip = IPRoute()
         mask = 16
-        addr = "10.1."+str(count)+".1"
+        addr = "10.1."+str(count+1)+".1"
         ip.addr('add',
                 index=(ip.link_lookup(ifname='br2')),
                 address=addr,
@@ -91,19 +92,31 @@ class OVSInterface(dict):
 
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
-            run("ovs-vsctl add-port br2 gre"+str(len(self.endpoints))+  
-                    " -- set Interface gre"+str(len(self.endpoints))+" type=gre options:remote_ip="+(endpoint))
+            keys = [key for key,value in self.tunnel_bucket.iteritems() if value==None]
+            if keys:
+                available = keys[0]
+                self.tunnel_bucket[available] = endpoint
+            else:
+                raise IndexError
+            run("ovs-vsctl add-port br2 gre"+str(available)+  
+                    " -- set Interface gre"+str(available)+" type=gre options:remote_ip="+(endpoint))
             #run("establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
             #self.endpoints.append(endpoint)
 
     def removeEndpoint(self, *endpoints):
         for e in endpoints:
             endpoint = None
-            if isinstance(endpoint,int):
+            if isinstance(e,int):
               endpoint = self.endpoints[e]
             else:
                 endpoint = e
-            run("ovs-vsctl del-port gre"+str(endpoints.index(endpoint)))
+            tunnel_idx = [idx for idx,ep in self.tunnel_bucket.iteritems() if ep == endpoint]
+            if tunnel_idx:
+                tunnel_idx = tunnel_idx[0]
+            else:
+                raise ValueError
+            run("ovs-vsctl del-port gre"+str(tunnel_idx))
+            self.tunnel_bucket[tunnel_idx] = None
             #del self.endpoints[self.endpoints.index(endpoint)]
 
     def connectContainer(self, *containers):
