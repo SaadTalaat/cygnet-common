@@ -62,8 +62,8 @@ class NetworkInterface(dict):
     def initalize(self):
         return self.network.initalize()
 
-    def initContainerNetwork(self, count):
-        return self.network.initContainerNetwork(count)
+    def initContainerNetwork(self):
+        return self.network.initContainerNetwork()
 
     ##### Functionality oriented methods #####
     def addEndpoint(self, *endpoints):

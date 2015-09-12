@@ -16,7 +16,7 @@ def __getIPv4Addr__(addr_list):
             continue
     return None
 
-class OVSInterface(dict):
+class OpenvSwitch(dict):
     '''
         Use an OVS client to query the database for current ovs network.
     '''
@@ -78,10 +78,13 @@ class OVSInterface(dict):
         self.range_buckets[int(self.addr[0].split(".")[-1])] = 1
         return self.addr
 
-    def initContainerNetwork(self, count):
+    def initContainerNetwork(self):
         ip = IPRoute()
-        mask = 16
-        addr = "10.1."+str(count+1)+".1"
+        try:
+            addr = environ["CYGNET_INTERNAL_IP"]
+        except KeyError as e:
+            print "OpenvSwitch: CYGNET_INTERNAL_IP environment variable not found"
+            raise e
         ip.addr('add',
                 index=(ip.link_lookup(ifname='br2')),
                 address=addr,
