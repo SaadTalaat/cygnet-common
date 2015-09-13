@@ -37,7 +37,7 @@ class BaseTable(dict):
         column_flags = list(set(column_flags))
         select_flags = list(set(select_flags))
         if column_flags:
-            self['columns'] = [column for column self.columns if self.columns.index(column) in column_flags]
+            self['columns'] = [column for column in self.columns if self.columns.index(column) in column_flags]
         if select_flags:
             self['select']  = [op for op in self.select if self.select.index(op) in select_flags]
 
