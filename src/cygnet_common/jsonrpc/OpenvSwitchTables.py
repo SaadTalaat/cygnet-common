@@ -45,6 +45,7 @@ class BaseTable(dict):
 class PortTable(BaseTable):
     ## TODO: build columns dynamically from a read ovsschema
     ## XXX: not complete
+    __name__    = 'Port'
     columns     = ["invalid","interfaces","name","tag","trunks"]
 
     INTERFACES  = 2 ** columns.index("interfaces")
@@ -54,6 +55,7 @@ class PortTable(BaseTable):
 
 
 class ManagerTable(BaseTable):
+    __name__            = 'Manager'
     columns             = ["invalid","target",
                             "max_backoff","inactivity_probe",
                             "connection_mode","other_config",
@@ -71,6 +73,7 @@ class ManagerTable(BaseTable):
 
 class InterfaceTable(BaseTable):
     ##XXX: not complete
+    __name__    = 'Interface'
     columns     = ["invalid","name","options","type","mac"]
 
     NAME        = 2 ** columns.index("name")
@@ -80,6 +83,7 @@ class InterfaceTable(BaseTable):
 
 
 class BridgeTable(BaseTable):
+    __name__    = 'Bridge'
     columns     = ["invalid","controller","fail_mode","name","ports"]
 
     CONTROLLER  = 2 ** columns.index("controller")
@@ -89,6 +93,7 @@ class BridgeTable(BaseTable):
 
 
 class OpenvSwitchTable(BaseTable):
+    __name__        = 'Open_vSwitch'
     columns         = ["invalid","bridges",
                         "cur_cfg","manager_options",
                         "ovs_version"]
