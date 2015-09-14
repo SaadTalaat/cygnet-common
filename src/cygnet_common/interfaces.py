@@ -16,7 +16,7 @@ def __getIPv4Addr__(addr_list):
             continue
     return None
 
-class OpenvSwitch(dict):
+class openvswitch(dict):
     '''
         Use an OVS client to query the database for current ovs network.
     '''
@@ -101,7 +101,7 @@ class OpenvSwitch(dict):
                 self.tunnel_bucket[available] = endpoint
             else:
                 raise IndexError
-            run("ovs-vsctl add-port br2 gre"+str(available)+  
+            run("ovs-vsctl add-port br2 gre"+str(available)+
                     " -- set Interface gre"+str(available)+" type=gre options:remote_ip="+(endpoint))
             #run("establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
             #self.endpoints.append(endpoint)
