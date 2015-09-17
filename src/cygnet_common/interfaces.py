@@ -82,7 +82,7 @@ class openvswitch(dict):
         ip = IPRoute()
         try:
             addr = self['internal-ip'].split('/')[0]
-            mask = self['internal-ip'].split('/')[1])
+            mask = int(self['internal-ip'].split('/')[1])
         except KeyError as e:
             print "OpenvSwitch: CYGNET_INTERNAL_IP environment variable not found"
             raise e
