@@ -31,7 +31,7 @@ class openvswitch(dict):
         self['endpoints'] = kwargs['endpoints']
         self['containers'] = kwargs['containers']
         self['interfaces'] = kwargs['interfaces']
-        self['internal-ip'] = kwargs['internal-ip']
+        self['internal_ip'] = kwargs['internal_ip']
         ## Add callbacks
         ####
         # Should read database here
@@ -81,8 +81,8 @@ class openvswitch(dict):
     def initContainerNetwork(self):
         ip = IPRoute()
         try:
-            addr = self['internal-ip'].split('/')[0]
-            mask = int(self['internal-ip'].split('/')[1])
+            addr = self['internal_ip'].split('/')[0]
+            mask = int(self['internal_ip'].split('/')[1])
         except KeyError as e:
             print "OpenvSwitch: CYGNET_INTERNAL_IP environment variable not found"
             raise e
