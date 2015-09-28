@@ -1,5 +1,7 @@
 from cygnet_common.jsonrpc.OpenvSwitchTables import *
-
+from cygnet_common.jsonrpc.helpers.Port import OVSPort
+from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
+from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
 
 class BaseDict(dict):
     def __getattribute__(self, key, *args):
@@ -94,7 +96,7 @@ class OpenvSwitchState(BaseDict):
 
     def __sort_Requests(self, requests):
         from enum import Enum
-        req_enum    = Enum('requests','Open_vSwitch Bridge Port Interface')
+        req_enum    = Enum('requests','Interface Port Bridge Open_vSwitch')
         result      = [None]*len(requests)
         for i in range(0,len(result)):
             r   = requests[i]
@@ -108,90 +110,18 @@ class OpenvSwitchState(BaseDict):
 
     def __update_Interface(self, result):
         for uuid, table_states in result.iteritems():
-            if not self.interfaces.has_key(uuid):
-                self.interfaces[uuid] = BaseDict()
-            for state, columns in table_states.iteritems():
-                if state == 'new':
-                    for column, value in columns.iteritems():
-                        if type(value) in [list,tuple] and value[0] == 'set':
-                            self.interfaces[uuid][column] = value[1]
-                        else:
-                            self.interfaces[uuid][column] = value
+            self.interface[uuid] = OVSInterface(self, uuid, table_states)
 
     def __update_Port(self, result):
         for uuid, table_states in result.iteritems():
-            if not self.ports.has_key(uuid):
-                self.ports[uuid] = BaseDict()
-            for state, columns in table_states.iteritems():
-                if state == 'new':
-                    for column, value in columns.iteritems():
-                        if column == 'interfaces':
-                            interfaces = filter(lambda x: x != 'uuid', value)
-                            self.__verify_interfaces(uuid,interfaces)
-                        elif type(value) in [list,tuple] and value[0] == 'set':
-                            self.ports[uuid][column] = value[1]
-                        else:
-                            self.ports[uuid][column] = value
+            self.ports[uuid] = OVSPort(self, uuid, table_states)
 
     def __update_Bridge(self, result):
         for uuid, table_states in result.iteritems():
-            ## Is it a new bridge?
-            if not self.bridges.has_key(uuid):
-                self.bridges[uuid] = BaseDict()
-            for state, columns in table_states.iteritems():
-                if state == 'new':
-                    for column, value in columns.iteritems():
-                        if column == 'ports':
-                            ports = filter(lambda x: x!='uuid',value)
-                            self.__verify_ports(uuid, ports)
-                        elif type(value) in [list,tuple] and value[0] == 'set':
-                            self.bridges[uuid][column] = value[1]
-                        else:
-                            self.bridges[uuid][column] = value
-
+            self.bridges[uuid] = OVSBridge(self, uuid, table_states)
 
     def __update_OpenvSwitch(self, result):
         for uuid, table_states in result.iteritems():
             self['uuid'] = uuid
-            for state, columns in table_states.iteritems():
-                if state == 'new':
-                    for column, value in columns.iteritems():
-                        if column == 'bridges':
-                            bridges = []
-                            [bridges.extend(val) for val in value[1]]
-                            bridges = filter(lambda x: x!='uuid',bridges)
-                            self.__verify_bridges(bridges)
-                        elif type(value) in [list,tuple] and value[0] == 'set':
-                            self[column] = value[1]
-                        else:
-                            self[column] = value
+            self.switch = OVSwitch(self, uuid, table_states)
 
-
-    def __verify_interfaces(self, port, interface_uuids):
-        if not self.ports[port].has_key("interfaces"):
-            self.ports[port]["interfaces"] = []
-        exists  = set(self.interfaces.keys())
-        check   = set(interface_uuids)
-        new     = exists ^ check
-        for interface_uuid in new:
-            self.interfaces[interface_uuid] = BaseDict()
-            self.ports[port]['interfaces'].append(self.interfaces[interface_uuid])
-
-    def __verify_ports(self, bridge, port_uuids):
-        if not self.bridges[bridge].has_key("ports"):
-            self.bridges[bridge]["ports"] = []
-
-        exists  = set(self.ports.keys())
-        check   = set(port_uuids)
-        new     = exists ^ check
-        for port_uuid in new:
-            self.ports[port_uuid] = BaseDict()
-            self.bridges[bridge]['ports'].append(self.ports[port_uuid])
-
-
-    def __verify_bridges(self, bridge_uuids):
-        exists  = set(self['bridges'].keys())
-        check   = set(bridges_uuids)
-        new     = exists ^ check
-        for bridge_uuid in new:
-            self['bridges'][bridge_uuid] = BaseDict()
