@@ -15,7 +15,7 @@ class OVSwitch(object):
                         bridges = []
                         [bridges.extend(val) for val in value[1]]
                         bridges = [bridge for bridge in bridges if bride != 'uuid']
-                    elif type(value) is in [list, tuple] and value[0] == 'set':
+                    elif type(value) in [list, tuple] and value[0] == 'set':
                         state[column] = value[1]
                     else:
                         state[column] = value

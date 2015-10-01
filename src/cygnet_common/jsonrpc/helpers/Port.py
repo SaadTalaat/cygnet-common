@@ -15,7 +15,7 @@ class OVSPort(object):
                 for column, value in columns.iteritems():
                     if column == 'interfaces':
                         interfaces = [i for i in value if i != 'uuid']
-                    elif type(value) in [list,tuple] and value[0] = 'set':
+                    elif type(value) in [list,tuple] and value[0] == 'set':
                         setattr(self, column, value[1])
                     else:
                         setattr(self, column, value)

@@ -35,6 +35,10 @@ class WaitTransaction(Transaction):
         self['where'] = list()
         self['table'] = None
 
+    @property
+    def table(self):
+        return self['table']
+
     @table.setter
     def table(self, instance_type):
         self['table'] = {
@@ -42,6 +46,10 @@ class WaitTransaction(Transaction):
                 OVSBridge:'Bridge',
                 OVSwitch: 'Open_vSwitch'
                 }[instance_type]
+
+    @property
+    def instance(self):
+        return self._instance
 
     @instance.setter
     def instance(self, value):
@@ -56,6 +64,10 @@ class WaitTransaction(Transaction):
         target = ['uuid', value.uuid]
         condition = ['_uuid','==',target]
         self['where'].append(condition)
+
+    @property
+    def rows(self):
+        return self['rows']
 
     @rows.setter
     def rows(self, row_dict):
