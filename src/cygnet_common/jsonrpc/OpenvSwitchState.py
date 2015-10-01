@@ -3,32 +3,7 @@ from cygnet_common.jsonrpc.helpers.Port import OVSPort
 from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
 from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
 
-class BaseDict(dict):
-    def __getattribute__(self, key, *args):
-        try:
-            return dict.__getattribute__(self, key)
-        except AttributeError as e:
-            if key in self:
-                return self[key]
-            else:
-                raise e
-
-    def __setattr__(self, key, value):
-        try:
-            dict.__setattr__(self, key, value)
-        except AttributeError as e:
-            if key in self:
-                self[key] = value
-            else:
-                raise e
-    def __delattr__(self, key):
-        try:
-            dict.__delattr__(self, key)
-        except AttributeError as e:
-            if key in self:
-                del self[key]
-            else:
-                raise e
+from cygnet_common.Structures import BaseDict
 
 class OpenvSwitchState(BaseDict):
     '''

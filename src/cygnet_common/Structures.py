@@ -22,3 +22,30 @@ class CallbackList(list):
 
     def removeCallback(self, func, callback):
         self.__callbacks__[func.__name__].remove(callback)
+
+class BaseDict(dict):
+    def __getattribute__(self, key, *args):
+        try:
+            return dict.__getattribute__(self, key)
+        except AttributeError as e:
+            if key in self:
+                return self[key]
+            else:
+                raise e
+
+    def __setattr__(self, key, value):
+        try:
+            dict.__setattr__(self, key, value)
+        except AttributeError as e:
+            if key in self:
+                self[key] = value
+            else:
+                raise e
+    def __delattr__(self, key):
+        try:
+            dict.__delattr__(self, key)
+        except AttributeError as e:
+            if key in self:
+                del self[key]
+            else:
+                raise e
