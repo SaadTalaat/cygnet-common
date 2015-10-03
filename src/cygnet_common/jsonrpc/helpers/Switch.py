@@ -1,13 +1,17 @@
 
 class OVSwitch(object):
 
-    def __init__(self, state, uuid, switch_dict):
+    def __init__(self):
+        pass
+
+    @classmethod
+    def parse(cls, state, uuid, switch_dict):
         assert type(uuid) in [unicode,str]
         assert type(switch_dict) is dict
         assert len(switch_dict) > 0
-
-        self.uuid = uuid
-        self.bridges = dict()
+        switch = cls()
+        switch.uuid = uuid
+        switch.bridges = dict()
         for state, columns in switch_dict.iteritems():
             if state == 'new':
                 for column, value in columns.iteritems():
@@ -20,4 +24,5 @@ class OVSwitch(object):
                     else:
                         state[column] = value
         for bridge in bridges:
-            self.bridges[bridge] = state.bridges[bridge]
+            switch.bridges[bridge] = state.bridges[bridge]
+        return switch

@@ -1,13 +1,17 @@
 class OVSBridge(object):
 
+    def __init__(self):
+        pass
 
-    def __init__(self, state, uuid, bridge_dict):
+    @classmethod
+    def parse(cls, state, uuid, bridge_dict):
         assert type(uuid) in [str, unicode]
         assert type(bridge_dict) is dict
         assert len(bridge_dict) > 0
+        bridge = cls()
 
-        self.uuid = uuid
-        self.ports = dict()
+        bridge.uuid = uuid
+        bridge.ports = dict()
 
         for state, columns in bridge_dict.iteritems():
             if state == 'new':
@@ -15,8 +19,10 @@ class OVSBridge(object):
                     if column == 'ports':
                         ports = [p for p in value if p != 'uuid']
                     elif type(value) in [tuple, list] and value[0] == 'set':
-                        setattr(self, column, value[1])
+                        setattr(bridge, column, value[1])
                     else:
-                        setattr(self, column, value)
+                        setattr(bridge, column, value)
         for port in ports:
-            self.ports[port] = state.ports[port]
+            bridge.ports[port] = state.ports[port]
+        return bridge
+

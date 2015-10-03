@@ -2,6 +2,7 @@ from cygnet_common.jsonrpc.OpenvSwitchTables import *
 from cygnet_common.jsonrpc.helpers.Port import OVSPort
 from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
 from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
+from cygnet_common.jsonrpc.helpers.Switch import OVSwitch
 
 from cygnet_common.Structures import BaseDict
 
@@ -85,18 +86,18 @@ class OpenvSwitchState(BaseDict):
 
     def __update_Interface(self, result):
         for uuid, table_states in result.iteritems():
-            self.interface[uuid] = OVSInterface(self, uuid, table_states)
+            self.interface[uuid] = OVSInterface.parse(self, uuid, table_states)
 
     def __update_Port(self, result):
         for uuid, table_states in result.iteritems():
-            self.ports[uuid] = OVSPort(self, uuid, table_states)
+            self.ports[uuid] = OVSPort.parse(self, uuid, table_states)
 
     def __update_Bridge(self, result):
         for uuid, table_states in result.iteritems():
-            self.bridges[uuid] = OVSBridge(self, uuid, table_states)
+            self.bridges[uuid] = OVSBridge.parse(self, uuid, table_states)
 
     def __update_OpenvSwitch(self, result):
         for uuid, table_states in result.iteritems():
             self['uuid'] = uuid
-            self.switch = OVSwitch(self, uuid, table_states)
+            self.switch = OVSwitch.parse(self, uuid, table_states)
 

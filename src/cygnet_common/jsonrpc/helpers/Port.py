@@ -1,14 +1,16 @@
 
 class OVSPort(object):
 
+    def __init__(self):
+        pass
 
-    def __init__(self, state, uuid, port_dict):
+    def parse(cls, state, uuid, port_dict):
         assert type(uuid) in [str, unicode]
         assert type(port_dict) is dict
         assert len(port_dict) > 0
-
-        self.uuid = uuid
-        self.interfaces = dict()
+        port = cls()
+        port.uuid = uuid
+        port.interfaces = dict()
 
         for state, columns in port_dict.iteritems():
             if state == 'new':
@@ -16,9 +18,10 @@ class OVSPort(object):
                     if column == 'interfaces':
                         interfaces = [i for i in value if i != 'uuid']
                     elif type(value) in [list,tuple] and value[0] == 'set':
-                        setattr(self, column, value[1])
+                        setattr(port, column, value[1])
                     else:
-                        setattr(self, column, value)
+                        setattr(port, column, value)
         for iface in interfaces:
-            self.interfaces[iface] = state.interfaces[iface]
+            port.interfaces[iface] = state.interfaces[iface]
 
+        return port

@@ -1,18 +1,22 @@
 
 class OVSInterface(object):
 
+    def __init__(self):
+        pass
 
-    def __init__(self, state, uuid, interface_dict):
+    @classmethod
+    def parse(cls, state, uuid, interface_dict):
         assert type(interface_dict) is dict
         assert len(interface_dict) > 0
         assert type(uuid) in [str,unicode]
-        self.uuid = uuid
+        interface = cls()
+        interface.uuid = uuid
         for state, columns in interface_dict.iteritems():
             #XXX: Handle old states
             if state == 'new':
                 for column, value in columns.iteritems():
                     if type(value) in [list,tuple] and value[0] == 'set':
-                        setattr(self,column, value[1])
+                        setattr(interface,column, value[1])
                     else:
-                        setattr(self, column, value)
-        return
+                        setattr(interface, column, value)
+        return interface
