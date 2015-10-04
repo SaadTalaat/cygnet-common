@@ -65,6 +65,7 @@ class WaitTransaction(Transaction):
         target = ['uuid', value.uuid]
         condition = ['_uuid','==',target]
         self['where'].append(condition)
+        self._instance = value
 
     @property
     def rows(self):
@@ -130,4 +131,85 @@ class InsertTransaction(Transaction):
     def instance(self, value):
         assert type(value) in [OVSBridge, OVSPort, OVSInterface]
         self.table = type(value)
+        self._instance
+
+class MutateTransaction(Transaction):
+
+    def __init__(self, instance, column=None, mutation=None, timeout=0):
+        super(MutateTransaction, self).__init__('mutate',timeout)
+        self.instance = instance
+        self['table'] = None
+        self['where'] = list()
+        self['mutations'] = list([[column, mutation,1]])
+
+    @property
+    def mutations(self):
+        return self['mutations'][0]
+
+    @mutations.setter
+    def mutations(self, mutate_list):
+        self['mutations'].append(list())
+        self['mutations'][0].append(mutate_list[0])
+        self['mutations'][0].append(mutate_list[1])
+        self['mutations'][0].append(mutate_list[2])
+
+    @property
+    def mutation(self):
+        return self._mutation
+
+    @mutation.setter
+    def mutation(self, operation):
+        assert type(operation) in [str,unicode]
+        assert len(operation) == 2
+        assert operation in ["+=","-=","*=","/=","%="]
+        if len(self.mutations) == 0:
+            self.mutations.append([None,None,None])
+        self.mutations[0][1] = operation
+
+    @property
+    def column(self):
+        return self.mutations[0][0]
+
+    @column.setter
+    def column(self, col):
+        assert type(col) is in [str, unicode]
+        assert col in dir(self.instance)
+        if len(self.mutations) == 0:
+            self.mutations.append([None,None,None])
+        self.mutations[0][0] = col
+
+    @property
+    def value(self):
+        return self.mutations[0][2]
+
+    @value.setter
+    def value(self, val):
+        if len(self.mutations) == 0:
+            self.mutations.append([None,None,None])
+        self.mutations[0][2] = val
+
+    @property
+    def instance(self):
+        return self._instance
+
+    @instance.setter
+    def instance(self, value):
+        assert type(value) in [OVSPort, OVSBridge, OVSwitch, OVSInterface]
+        self.table = type(value)
+        target = ['uuid', value.uuid]
+        condition = ['_uuid','==',target]
+        self['where'].append(condition)
+        self._instance = value
+
+    @property
+    def table(self):
+        return self['table']
+    @table.setter
+    def table(self, instance_type):
+        self['table'] = {
+                OVSPort:    'Port',
+                OVSwitch:   'Open_vSwitch',
+                OVSBridge:  'Bridge',
+                OVSInterface:   'Interface'
+                }[instance_type]
 
