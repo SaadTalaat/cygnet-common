@@ -91,9 +91,9 @@ class InsertTransaction(Transaction):
     def __init__(self, instance, timeout=0):
         super(InsertTransaction, self).__init__('insert',timeout)
         self.instance = instance
-        self.instance.uuid_name = str(uuid1())
+        self.instance.uuid_name = 'row' + str(uuid1())
         self['table'] = None
-        self['uuid-name'] = 'row'+ self.instance.uuid_name
+        self['uuid-name'] = self.instance.uuid_name
 
     @property
     def row(self):
@@ -131,7 +131,7 @@ class InsertTransaction(Transaction):
     def instance(self, value):
         assert type(value) in [OVSBridge, OVSPort, OVSInterface]
         self.table = type(value)
-        self._instance
+        self._instance = value
 
 class MutateTransaction(Transaction):
 
@@ -172,7 +172,7 @@ class MutateTransaction(Transaction):
 
     @column.setter
     def column(self, col):
-        assert type(col) is in [str, unicode]
+        assert type(col) in [str, unicode]
         assert col in dir(self.instance)
         if len(self.mutations) == 0:
             self.mutations.append([None,None,None])
@@ -213,3 +213,56 @@ class MutateTransaction(Transaction):
                 OVSInterface:   'Interface'
                 }[instance_type]
 
+
+class UpdateTransaction(Transaction):
+
+    def __init__(self, instance, column=None, timeout=0):
+        super(UpdateTransaction, self).__init__('update',timeout)
+        self.instance = instance
+        self['table'] = None
+        self['where'] = list()
+        self['row'] = dict()
+
+    @property
+    def row(self):
+        return self['row']
+
+    @row.setter
+    def row(self, row_dict):
+        self['row'] = dict()
+        for column, value in row_dict.iteritems():
+            if column in ['ports','interfaces','bridges']:
+                self['row'][column] = ['set',[]]
+                for entry in value.iteritems():
+                    if 'uuid_name' in dir(entry):
+                        self['row'][column][1].append(['named-uuid',entry.uuid_name])
+                    else:
+                        self['row'][column][1].append(['uuid',entry.uuid])
+            else:
+                self['row'][column] = value
+
+    @property
+    def table(self):
+        return self['table']
+
+    @table.setter
+    def table(self, instance_type):
+        self['table'] = {
+                OVSPort:'Port',
+                OVSBridge:'Bridge',
+                OVSwitch:'Open_vSwitch',
+                OVSInterface:'Interface'
+                }[instance_type]
+
+    @property
+    def instance(self):
+        return self._instance
+
+    @instance.setter
+    def instance(self, value):
+        assert type(value) in [OVSPort,OVSBridge,OVSInterface,OVSwitch]
+        self.table = type(value)
+        target = ['uuid',value.uuid]
+        condition = ['_uuid','==',target]
+        self['where'].append(condition)
+        self._instance = instance
