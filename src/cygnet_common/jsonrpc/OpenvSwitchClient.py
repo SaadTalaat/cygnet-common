@@ -1,7 +1,7 @@
 import socket
 import json
-from cygnet_common.jsonrpc import OpenvSwitchTables
-
+from cygnet_common.jsonrpc.OpenvSwitchTables import *
+from cygnet_common.jsonrpc.OpenvSwitchState import OpenvSwitchState
 class OpenvSwitchClient(object):
 
     BUFF_SIZE = 32768
@@ -29,12 +29,15 @@ class OpenvSwitchClient(object):
     def monitor(self, monitor_requests):
         ### Monitor params should be:
         ##  - Tables
+        response = None
         params = [
                 "Open_vSwitch",
                 None,
                 dict()]
         for request in monitor_requests:
-            params[2][request.__class__.__name__] = request
+            print request.__class__
+            print request.name
+            params[2][request.name] = request
 
         payload = {
                 'method'    :'monitor',
@@ -42,13 +45,16 @@ class OpenvSwitchClient(object):
                 'params'    : params
                 }
         self.sock.send(json.dumps(payload))
+        print "payload", payload
 
         self.monitor = self.cur_id
         while True:
             ## is it a notification?
             response = self.update_notification(self.sock.recv(self.BUFF_SIZE))
+            print "Response", response
             if response:
                 break
+
         self.ovs_state.update(monitor_requests, response)
         self.cur_id +=1
         return self.ovs_state
@@ -56,7 +62,7 @@ class OpenvSwitchClient(object):
 
     def update_notification(self, notification):
         response = json.loads(notification)
-        if response['methd'] == 'update':
+        if response.has_key('method') and response['method'] == 'update':
             return None
         return response
 

@@ -11,9 +11,9 @@ class OVSInterface(object):
         assert type(uuid) in [str,unicode]
         interface = cls()
         interface.uuid = uuid
-        for state, columns in interface_dict.iteritems():
+        for row_state, columns in interface_dict.iteritems():
             #XXX: Handle old states
-            if state == 'new':
+            if row_state == 'new':
                 for column, value in columns.iteritems():
                     if type(value) in [list,tuple] and value[0] == 'set':
                         setattr(interface,column, value[1])

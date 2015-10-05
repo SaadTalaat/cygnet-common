@@ -27,11 +27,11 @@ class BaseTable(dict):
             '''
             Extract both column and select flags
             '''
-            column_flags.extend([int(log(flag),2) for flag in args if flag % 2 == 0])
-            select_flags.extend([int(log(flag),3) for flag in args if flag % 3 == 0])
+            column_flags.extend([int(log(flag,2)) for flag in args if flag % 2 == 0])
+            select_flags.extend([int(log(flag,3)) for flag in args if flag % 3 == 0])
         if kwargs:
-            column_flags.extend([int(log(flag),2) for flag in kwargs["columns"] if flag % 2 == 0])
-            select_flags.extend([int(log(flag),3) for flag in kwargs["select"]  if flag % 3 == 0])
+            column_flags.extend([int(log(flag,2)) for flag in kwargs["columns"] if flag % 2 == 0])
+            select_flags.extend([int(log(flag,3)) for flag in kwargs["select"]  if flag % 3 == 0])
 
         ## Remove replicated indices
         column_flags = list(set(column_flags))
@@ -45,7 +45,7 @@ class BaseTable(dict):
 class PortTable(BaseTable):
     ## TODO: build columns dynamically from a read ovsschema
     ## XXX: not complete
-    __name__    = 'Port'
+    name    = 'Port'
     columns     = ["invalid","interfaces","name","tag","trunks"]
 
     INTERFACES  = 2 ** columns.index("interfaces")
@@ -55,7 +55,7 @@ class PortTable(BaseTable):
 
 
 class ManagerTable(BaseTable):
-    __name__            = 'Manager'
+    name            = 'Manager'
     columns             = ["invalid","target",
                             "max_backoff","inactivity_probe",
                             "connection_mode","other_config",
@@ -73,7 +73,7 @@ class ManagerTable(BaseTable):
 
 class InterfaceTable(BaseTable):
     ##XXX: not complete
-    __name__    = 'Interface'
+    name    = 'Interface'
     columns     = ["invalid","name","options","type","mac"]
 
     NAME        = 2 ** columns.index("name")
@@ -83,7 +83,7 @@ class InterfaceTable(BaseTable):
 
 
 class BridgeTable(BaseTable):
-    __name__    = 'Bridge'
+    name    = 'Bridge'
     columns     = ["invalid","controller","fail_mode","name","ports"]
 
     CONTROLLER  = 2 ** columns.index("controller")
@@ -93,7 +93,7 @@ class BridgeTable(BaseTable):
 
 
 class OpenvSwitchTable(BaseTable):
-    __name__        = 'Open_vSwitch'
+    name        = 'Open_vSwitch'
     columns         = ["invalid","bridges",
                         "cur_cfg","manager_options",
                         "ovs_version"]

@@ -58,27 +58,31 @@ class OpenvSwitchState(BaseDict):
         result = response['result']
         requests = self.__sort_Requests(requests)
         for request in requests:
-            table = request.__name__
+            table = request.name
             if not result.has_key(table):
                 continue
-            if table == OpenvSwitchTable.__name__:
+            if table == OpenvSwitchTable.name:
                 self.__update_OpenvSwitch(result[table])
-            elif table == BridgeTable.__name__:
+            elif table == BridgeTable.name:
                 self.__update_Bridge(result[table])
-            elif table == PortTable.__name__:
+            elif table == PortTable.name:
                 self.__update_Port(result[table])
-            elif table == InterfaceTable.__name__:
+            elif table == InterfaceTable.name:
                 self.__update_Interface(result[table])
 
     def __sort_Requests(self, requests):
         from enum import Enum
         req_enum    = Enum('requests','Interface Port Bridge Open_vSwitch')
-        result      = [None]*len(requests)
-        for i in range(0,len(result)):
+        if len(req_enum) >= len(requests):
+            result  = [None]*len(req_enum)
+        else:
+            result  = [None]*len(requests)
+        print result
+        for i in range(0,len(requests)):
             r   = requests[i]
-            idx = req_enum[r.__name__].value
+            idx = req_enum[r.name].value - 1
             result[idx] = r
-            requests.remove(r)
+
         result = filter(lambda x: x, result)
         result.extend(requests)
         return result
@@ -95,7 +99,7 @@ class OpenvSwitchState(BaseDict):
     def __update_Bridge(self, result):
         for uuid, table_states in result.iteritems():
             self.bridges[uuid] = OVSBridge.parse(self, uuid, table_states)
-
+            print self.bridges
     def __update_OpenvSwitch(self, result):
         for uuid, table_states in result.iteritems():
             self['uuid'] = uuid

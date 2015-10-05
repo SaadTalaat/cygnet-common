@@ -12,17 +12,22 @@ class OVSwitch(object):
         switch = cls()
         switch.uuid = uuid
         switch.bridges = dict()
-        for state, columns in switch_dict.iteritems():
-            if state == 'new':
+        for row_state, columns in switch_dict.iteritems():
+            if row_state == 'new':
                 for column, value in columns.iteritems():
                     if column == 'bridges':
                         bridges = []
                         [bridges.extend(val) for val in value[1]]
-                        bridges = [bridge for bridge in bridges if bride != 'uuid']
+                        bridges = [bridge for bridge in bridges if bridge != 'uuid']
                     elif type(value) in [list, tuple] and value[0] == 'set':
                         state[column] = value[1]
                     else:
                         state[column] = value
+        print state
         for bridge in bridges:
-            switch.bridges[bridge] = state.bridges[bridge]
+            try:
+                switch.bridges[bridge] = state.bridges[bridge]
+            except KeyError as e:
+                state.bridges[bridge] = None
+                switch.bridges[bridge] = None
         return switch
