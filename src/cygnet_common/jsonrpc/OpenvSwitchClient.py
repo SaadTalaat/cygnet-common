@@ -55,11 +55,10 @@ class OpenvSwitchClient(object):
 
 
     def update_notification(self, notification):
-        '''
-        validate notification
-        if not notification just return back the data passed
-        '''
-        pass
+        response = json.loads(notification)
+        if response['methd'] == 'update':
+            return None
+        return response
 
     def transaction(self, operations):
         pass
