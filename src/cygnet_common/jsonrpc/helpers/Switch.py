@@ -1,8 +1,11 @@
+from cynget_common.jsonrpc.OpenvSwitchTables import OpenvSwitchTable
 
 class OVSwitch(object):
 
     def __init__(self):
-        pass
+        self.columns = dict()
+        for column in OpenvSwitchTable.columns[1:]:
+            setattr(self, column, None)
 
     @classmethod
     def parse(cls, state, uuid, switch_dict):
@@ -19,11 +22,8 @@ class OVSwitch(object):
                         bridges = []
                         [bridges.extend(val) for val in value[1]]
                         bridges = [bridge for bridge in bridges if bridge != 'uuid']
-                    elif type(value) in [list, tuple] and value[0] == 'set':
-                        state[column] = value[1]
                     else:
                         state[column] = value
-        print state
         for bridge in bridges:
             try:
                 switch.bridges[bridge] = state.bridges[bridge]

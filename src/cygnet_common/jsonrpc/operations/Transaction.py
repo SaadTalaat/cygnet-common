@@ -29,12 +29,12 @@ class WaitTransaction(Transaction):
 
     def __init__(self, instance, timeout=0):
         super(WaitTransaction, self).__init__('wait', timeout)
-        self.instance = instance
         self['rows'] = list()
         self['columns'] = list()
         self['until'] = '=='
         self['where'] = list()
         self['table'] = None
+        self.instance = instance
 
     @property
     def table(self):
@@ -61,7 +61,8 @@ class WaitTransaction(Transaction):
                 OVSBridge:'ports',
                 OVSwitch:'bridges'
                 }[type(value)]
-        self.rows = {uuid_row:value.getattr(uuid_row)}
+        self.rows = {uuid_row:getattr(value, uuid_row)}
+        self['columns'].append(uuid_row)
         target = ['uuid', value.uuid]
         condition = ['_uuid','==',target]
         self['where'].append(condition)
@@ -90,16 +91,16 @@ class InsertTransaction(Transaction):
 
     def __init__(self, instance, timeout=0):
         super(InsertTransaction, self).__init__('insert',timeout)
+        self['table'] = None
         self.instance = instance
         self.instance.uuid_name = 'row' + str(uuid1())
-        self['table'] = None
         self['uuid-name'] = self.instance.uuid_name
 
     @property
     def row(self):
         return self['row']
 
-    @property
+    @row.setter
     def row(self, row_dict):
         self['row'] = dict()
         for column, value in row_dict.iteritems():
@@ -129,6 +130,7 @@ class InsertTransaction(Transaction):
 
     @instance.setter
     def instance(self, value):
+	print type(value), OVSInterface
         assert type(value) in [OVSBridge, OVSPort, OVSInterface]
         self.table = type(value)
         self._instance = value

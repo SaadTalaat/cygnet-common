@@ -1,7 +1,15 @@
+from cygnet_common.jsonrpc.OpenvSwitchTables import BridgeTable
+
 class OVSBridge(object):
 
-    def __init__(self):
-        pass
+    def __init__(self,name=None, ports=None):
+        self.columns = dict()
+        for column in BridgeTable.columns[1:]:
+            setattr(self, column, None)
+        self.name = name
+        if ports:
+            self.ports = ports
+
 
     @classmethod
     def parse(cls, state, uuid, bridge_dict):
@@ -22,13 +30,8 @@ class OVSBridge(object):
                         ports = [port for port in ports if port != 'uuid']
                     elif column == 'ports':
                         ports = [p for p in value if p != 'uuid']
-                    elif type(value) in [tuple, list] and value[0] == 'set':
-                        setattr(bridge, column, value[1])
                     else:
                         setattr(bridge, column, value)
-        print '------------'
-        print ports
-        print '------------'
         for port in ports:
             try:
                 bridge.ports[port] = state.ports[port]
@@ -37,3 +40,31 @@ class OVSBridge(object):
                 bridge.ports[port] = None
         return bridge
 
+    @property
+    def name(self, value):
+        return self.columns['name']
+
+    @name.setter
+    def name(self, value):
+        if type(value) in [str, unicode]:
+            self.columns['name'] = value
+        elif not value:
+            self.columns['name'] = ''
+        else:
+            raise TypeError("Bridge name must be a string")
+
+    @property
+    def ports(self):
+        return self.columns['ports']
+
+    @ports.setter
+    def ports(self, value):
+        if type(value) is dict:
+            self.columns['ports'] = value
+        elif type(value) is list:
+            for iface in value:
+                self.columns['ports'][iface.uuid] = iface
+        elif not value:
+            self.columns['ports'] = None
+        else:
+            raise TypeError("Bridge ports should be a dictionary or a list")
