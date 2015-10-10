@@ -4,14 +4,36 @@ from cygnet_common.jsonrpc.helpers.Port import OVSPort
 from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
 from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
 from uuid import uuid1
-
 class Transaction(BaseDict):
 
+    def __init__(self, cur_id):
+        self['method']  = 'transact'
+        self['id']      = cur_id
+        self['params']   = ['Open_vSwitch']
 
-    def __init__(self, op, timeout=0):
+    def addOperation(self, operation):
+        if isinstance(operation, Operation):
+            self.params.append(operation)
+        elif not isinstance(operation, Operation):
+            print "FFFFFFFFFAAAAULT"
+            print operation.__class__
+
+    def delOperation(self, operation):
+        if operation in self.params and isinstance(operation, Operation):
+            del self.params[self.params.index(operation)]
+
+    def addOperations(self, *args):
+        for operation in args:
+            if isinstance(operation, Operation):
+                self.params.append(operation)
+
+
+class Operation(BaseDict):
+
+
+    def __init__(self, op):
         self._instance = None
         self['op'] = op
-        self['timeout'] = timeout
         return
 
 
@@ -25,11 +47,12 @@ class Transaction(BaseDict):
         self._instance = value
 
 
-class WaitTransaction(Transaction):
+class WaitOperation(Operation):
 
     def __init__(self, instance, timeout=0):
-        super(WaitTransaction, self).__init__('wait', timeout)
+        super(WaitOperation, self).__init__('wait')
         self['rows'] = list()
+        self['timeout'] = timeout
         self['columns'] = list()
         self['until'] = '=='
         self['where'] = list()
@@ -83,19 +106,21 @@ class WaitTransaction(Transaction):
         for row_name, row_value in row_dict.iteritems():
             row = dict()
             row[row_name] = list()
-            [row[row_name].extend(["uuid",uuid]) for uuid in row_value.iterkeys()]
+            if len(row_value) == 1:
+                [row[row_name].extend(["uuid",uuid]) for uuid in row_value.iterkeys()]
+            else:
+                row[row_name].extend(['set',[]])
+                [row[row_name][1].extend([["uuid",uuid]]) for uuid in row_value.iterkeys()]
             self['rows'].append(row)
 
 
-class InsertTransaction(Transaction):
+class InsertOperation(Operation):
 
-    def __init__(self, instance, timeout=0):
-        super(InsertTransaction, self).__init__('insert',timeout)
+    def __init__(self, instance):
+        super(InsertOperation, self).__init__('insert')
         self['table'] = None
         self.instance = instance
-        self.instance.uuid_name = 'row' + str(uuid1())
         self['uuid-name'] = self.instance.uuid_name
-
     @property
     def row(self):
         return self['row']
@@ -133,16 +158,17 @@ class InsertTransaction(Transaction):
 	print type(value), OVSInterface
         assert type(value) in [OVSBridge, OVSPort, OVSInterface]
         self.table = type(value)
+        self.row = value.columns
         self._instance = value
 
-class MutateTransaction(Transaction):
+class MutateOperation(Operation):
 
-    def __init__(self, instance, column=None, mutation=None, timeout=0):
-        super(MutateTransaction, self).__init__('mutate',timeout)
-        self.instance = instance
+    def __init__(self, instance, column=None, mutation=None):
+        super(MutateOperation, self).__init__('mutate')
         self['table'] = None
         self['where'] = list()
         self['mutations'] = list([[column, mutation,1]])
+        self.instance = instance
 
     @property
     def mutations(self):
@@ -216,27 +242,26 @@ class MutateTransaction(Transaction):
                 }[instance_type]
 
 
-class UpdateTransaction(Transaction):
+class UpdateOperation(Operation):
 
-    def __init__(self, instance, column=None, timeout=0):
-        super(UpdateTransaction, self).__init__('update',timeout)
-        self.instance = instance
+    def __init__(self, instance, column=None):
+        super(UpdateOperation, self).__init__('update')
         self['table'] = None
         self['where'] = list()
         self['row'] = dict()
-
+        self.up_col = column
+        self.instance = instance
     @property
     def row(self):
         return self['row']
 
     @row.setter
     def row(self, row_dict):
-        self['row'] = dict()
         for column, value in row_dict.iteritems():
             if column in ['ports','interfaces','bridges']:
                 self['row'][column] = ['set',[]]
-                for entry in value.iteritems():
-                    if 'uuid_name' in dir(entry):
+                for entry_id,entry in value.iteritems():
+                    if entry_id[:3] == 'row':
                         self['row'][column][1].append(['named-uuid',entry.uuid_name])
                     else:
                         self['row'][column][1].append(['uuid',entry.uuid])
@@ -267,4 +292,13 @@ class UpdateTransaction(Transaction):
         target = ['uuid',value.uuid]
         condition = ['_uuid','==',target]
         self['where'].append(condition)
-        self._instance = instance
+        if self.up_col and type(self.up_col) in [str,unicode]:
+            self.row = {self.up_col:value.columns[self.up_col]}
+        elif self.up_col and type(self.up_col) is list:
+            rows = []
+            for col in self.up_col:
+                rows.append((col,value.columns[col]))
+            self.row = dict(rows)
+        else:
+            self.row = value.columns
+        self._instance = value

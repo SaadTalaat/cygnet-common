@@ -1,5 +1,6 @@
 
 from cygnet_common.jsonrpc.OpenvSwitchTables import PortTable
+from uuid import uuid1
 
 class OVSPort(object):
 
@@ -10,6 +11,8 @@ class OVSPort(object):
         self.name = name
         if interfaces:
             self.interfaces = interfaces
+        self.uuid_name = 'row' + str(uuid1()).replace('-','_')
+        self.uuid = self.uuid_name
 
     @classmethod
     def parse(cls, state, uuid, port_dict):
@@ -58,9 +61,10 @@ class OVSPort(object):
             self.columns['interfaces'] = value
         elif type(value) is list:
             for iface in value:
+                print self.columns
                 self.columns['interfaces'][iface.uuid] = iface
         elif not value:
-            self.columns['interfaces'] = None
+            self.columns['interfaces'] = dict()
         else:
             raise TypeError("Port interfaces should be a dictionary or a list")
 

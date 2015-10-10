@@ -77,7 +77,6 @@ class OpenvSwitchState(BaseDict):
             result  = [None]*len(req_enum)
         else:
             result  = [None]*len(requests)
-        print result
         for i in range(0,len(requests)):
             r   = requests[i]
             idx = req_enum[r.name].value - 1
@@ -99,7 +98,6 @@ class OpenvSwitchState(BaseDict):
     def __update_Bridge(self, result):
         for uuid, table_states in result.iteritems():
             self.bridges[uuid] = OVSBridge.parse(self, uuid, table_states)
-            print self.bridges
     def __update_OpenvSwitch(self, result):
         for uuid, table_states in result.iteritems():
             self['uuid'] = uuid

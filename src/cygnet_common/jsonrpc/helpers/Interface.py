@@ -1,4 +1,5 @@
 from cygnet_common.jsonrpc.OpenvSwitchTables import InterfaceTable
+from uuid import uuid1
 
 class OVSInterface(object):
 
@@ -9,6 +10,8 @@ class OVSInterface(object):
         self.name = name
         if interface_type:
             self.type = interface_type
+        self.uuid_name = 'row' + str(uuid1()).replace('-','_')
+        self.uuid = self.uuid_name
 
     @classmethod
     def parse(cls, state, uuid, interface_dict):
@@ -23,7 +26,7 @@ class OVSInterface(object):
                 for column, value in columns.iteritems():
                     setattr(interface, column, value)
         return interface
-    
+
     @property
     def name(self):
         return self.columns['name']
@@ -47,7 +50,7 @@ class OVSInterface(object):
             self.columns['type'] = value
         elif not value:
             self.columns['type'] = ''
-       else:
+        else:
             raise TypeError("Interface type must be a string")
 
     @property

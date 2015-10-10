@@ -1,4 +1,5 @@
 from cygnet_common.jsonrpc.OpenvSwitchTables import BridgeTable
+from uuid import uuid1
 
 class OVSBridge(object):
 
@@ -9,7 +10,8 @@ class OVSBridge(object):
         self.name = name
         if ports:
             self.ports = ports
-
+        self.uuid_name = 'row' + str(uuid1()).replace('-','_')
+        self.uuid = self.uuid_name
 
     @classmethod
     def parse(cls, state, uuid, bridge_dict):
@@ -41,7 +43,7 @@ class OVSBridge(object):
         return bridge
 
     @property
-    def name(self, value):
+    def name(self):
         return self.columns['name']
 
     @name.setter
@@ -65,6 +67,6 @@ class OVSBridge(object):
             for iface in value:
                 self.columns['ports'][iface.uuid] = iface
         elif not value:
-            self.columns['ports'] = None
+            self.columns['ports'] = dict()
         else:
             raise TypeError("Bridge ports should be a dictionary or a list")

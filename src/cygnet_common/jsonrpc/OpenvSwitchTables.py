@@ -33,6 +33,8 @@ class BaseTable(dict):
             column_flags.extend([int(log(flag,2)) for flag in kwargs["columns"] if flag % 2 == 0])
             select_flags.extend([int(log(flag,3)) for flag in kwargs["select"]  if flag % 3 == 0])
 
+        if not args and not kwargs:
+            self['columns'] = self.columns[1:]
         ## Remove replicated indices
         column_flags = list(set(column_flags))
         select_flags = list(set(select_flags))
@@ -95,7 +97,7 @@ class BridgeTable(BaseTable):
 class OpenvSwitchTable(BaseTable):
     name        = 'Open_vSwitch'
     columns         = ["invalid","bridges",
-                        "cur_cfg","manager_options",
+                        "cur_cfg","next_cfg","manager_options",
                         "ovs_version"]
 
     BRIDGES         = 2 ** columns.index("bridges")

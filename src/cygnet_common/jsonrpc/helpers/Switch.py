@@ -1,8 +1,8 @@
-from cynget_common.jsonrpc.OpenvSwitchTables import OpenvSwitchTable
+from cygnet_common.jsonrpc.OpenvSwitchTables import OpenvSwitchTable
 
 class OVSwitch(object):
 
-    def __init__(self):
+    def __init__(self, bridges=None):
         self.columns = dict()
         for column in OpenvSwitchTable.columns[1:]:
             setattr(self, column, None)
@@ -24,6 +24,7 @@ class OVSwitch(object):
                         bridges = [bridge for bridge in bridges if bridge != 'uuid']
                     else:
                         state[column] = value
+                        switch.columns[column] = value
         for bridge in bridges:
             try:
                 switch.bridges[bridge] = state.bridges[bridge]
@@ -31,3 +32,21 @@ class OVSwitch(object):
                 state.bridges[bridge] = None
                 switch.bridges[bridge] = None
         return switch
+
+    def addBridge(self, bridge):
+        self.columns['bridges'][bridge.uuid] = bridge
+    @property
+    def bridges(self):
+        return self.columns['bridges']
+
+    @bridges.setter
+    def bridges(self, value):
+        if type(value) is dict:
+            self.columns['bridges'] = value
+        elif type(value) is list:
+            for bridge in value:
+                self.columns['bridges'][bridge.uuid] = bridge
+        elif not value:
+            self.columns['bridges'] = dict()
+        else:
+            raise TypeError("Switch bridges must be a list of a dictionary")
