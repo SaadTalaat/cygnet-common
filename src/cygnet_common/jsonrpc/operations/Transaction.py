@@ -4,6 +4,7 @@ from cygnet_common.jsonrpc.helpers.Port import OVSPort
 from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
 from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
 from uuid import uuid1
+
 class Transaction(BaseDict):
 
     def __init__(self, cur_id):
@@ -14,9 +15,6 @@ class Transaction(BaseDict):
     def addOperation(self, operation):
         if isinstance(operation, Operation):
             self.params.append(operation)
-        elif not isinstance(operation, Operation):
-            print "FFFFFFFFFAAAAULT"
-            print operation.__class__
 
     def delOperation(self, operation):
         if operation in self.params and isinstance(operation, Operation):
@@ -27,7 +25,16 @@ class Transaction(BaseDict):
             if isinstance(operation, Operation):
                 self.params.append(operation)
 
+    def handleResult(self, response):
+        if not response.has_key('result'):
+            return None
+        result = response['result']
+        if result[-1].has_key('error'):
+            raise NotImplemented("Implement Transaction errors as Exceptions")
+        for index,param in enumerate(self.params[1:]):
+            param.handleResult(result[index])
 
+        return response
 class Operation(BaseDict):
 
 
@@ -46,6 +53,8 @@ class Operation(BaseDict):
         assert type(value) in [OVSwitch, OVSBridge, OVSPort, OVSInterface]
         self._instance = value
 
+    def handleResult(self, result):
+        pass
 
 class WaitOperation(Operation):
 
@@ -160,6 +169,14 @@ class InsertOperation(Operation):
         self.table = type(value)
         self.row = value.columns
         self._instance = value
+
+    def handleResult(self, result):
+        print "RESULT"
+        print result
+        print '-----------'
+        if result.has_key('uuid'):
+            self.instance.uuid = str(result['uuid'][1])
+            del self.instance.uuid_name
 
 class MutateOperation(Operation):
 

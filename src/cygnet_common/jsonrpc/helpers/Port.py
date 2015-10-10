@@ -14,6 +14,9 @@ class OVSPort(object):
         self.uuid_name = 'row' + str(uuid1()).replace('-','_')
         self.uuid = self.uuid_name
 
+    def update(self, update):
+        raise NotImplemented
+
     @classmethod
     def parse(cls, state, uuid, port_dict):
         assert type(uuid) in [str, unicode]

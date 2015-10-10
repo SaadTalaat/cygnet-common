@@ -13,6 +13,9 @@ class OVSInterface(object):
         self.uuid_name = 'row' + str(uuid1()).replace('-','_')
         self.uuid = self.uuid_name
 
+    def update(self, update):
+        raise NotImplemented
+
     @classmethod
     def parse(cls, state, uuid, interface_dict):
         assert type(interface_dict) is dict
@@ -38,7 +41,7 @@ class OVSInterface(object):
         elif not value:
             self.columns['name'] = ''
         else:
-            raise TypeError("Interface name must be a string")
+            raise TypeError("value must be a string")
 
     @property
     def type(self):
@@ -51,7 +54,7 @@ class OVSInterface(object):
         elif not value:
             self.columns['type'] = ''
         else:
-            raise TypeError("Interface type must be a string")
+            raise TypeError("value must be a string")
 
     @property
     def options(self):
@@ -64,4 +67,18 @@ class OVSInterface(object):
         elif not value:
             self.columns['options']= ['map',[]]
         else:
-            raise TypeError("Interface options must be a list")
+            raise TypeError("value must be a list")
+
+    @property
+    def mac(self):
+        return self.columns['mac']
+
+    @mac.setter
+    def mac(self, value):
+        if type(value) is list:
+            self.columns['mac'] = value
+        elif not value:
+            self.columns['mac'] = ['set',[]]
+        else:
+            raise TypeError("value must be a list")
+

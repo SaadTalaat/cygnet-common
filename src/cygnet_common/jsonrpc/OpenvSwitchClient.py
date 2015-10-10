@@ -61,23 +61,21 @@ class OpenvSwitchClient(object):
         self.monitor_id = self.cur_id
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
         for response in responses:
-            update = self.update_notification(response)
+            res = json.loads(response)
+            update = self.update_notification(res)
             if update:
                 updates.append(update)
         for response in updates:
-            self.ovs_state.update(monitor_requests, response)
+            #self.ovs_state.update(monitor_requests, response)
+            self.ovs_state.update(response)
         self.cur_id +=1
         return self.ovs_state
 
 
-    def update_notification(self, notification):
-        response = json.loads(notification)
+    def update_notification(self, response):
         if response.has_key('method') and response['method'] == 'update':
-            print '----------------'
-            print '    UPDATE      '
-            print '----------------'
-            print response
-            print '----------------'
+            print "UPDATE",response
+            self.ovs_state.update(response)
             return None
         return response
 
@@ -87,16 +85,16 @@ class OpenvSwitchClient(object):
         in order to assure consistency, wait transactions are
         conducted on state components (Bridge,Ports)
         '''
+        switch = self.ovs_state.switch
         if bridge_name in \
-                [br for br in self.ovs_state.bridges.values() if br.name == bridge_name]:
+                [br.name for br in self.ovs_state.bridges.values() if br.name == bridge_name]:
 
                     return None
         transaction = Transaction(self.cur_id)
 
         ## Generate Wait operations
-        for port,bridge in zip(self.ovs_state.ports.itervalues(), self.ovs_state.bridges.itervalues()):
-            transaction.addOperation(WaitOperation(port))
-            transaction.addOperation(WaitOperation(bridge))
+        for instance in self.ovs_state.ports.values() + self.ovs_state.bridges.values():
+            transaction.addOperation(WaitOperation(instance))
 
         ## Build sub-components of a bridge
         intern_if = OVSInterface(bridge_name)
@@ -109,24 +107,21 @@ class OpenvSwitchClient(object):
         transaction.addOperation(InsertOperation(intern_port))
         transaction.addOperation(InsertOperation(bridge))
 
-        switch = self.ovs_state.switch
         switch.addBridge(bridge)
         transaction.addOperation(UpdateOperation(switch,['bridges']))
         transaction.addOperation(MutateOperation(switch,'next_cfg','+='))
         self.sock.send(json.dumps(transaction))
-
+        del switch.bridges[bridge.uuid]
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
-        for response in responses:
-            result_tmp = self.update_notification(response)
-            if result_tmp:
-                ## Only one result expected
-                result = result_tmp
 
-        print "RESPONSE"
-        print result
+        for response in responses:
+            res = json.loads(response)
+            transaction.handleResult(res)
+            self.update_notification(res)
+        #print "RESPONSE"
+        #print responses
         self.cur_id +=1
-        from pprint import pprint
-        pprint(transaction)
+        #pprint(transaction)
 
 
     def cancel_transact(self, transact_id):

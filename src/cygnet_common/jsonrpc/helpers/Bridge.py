@@ -13,6 +13,9 @@ class OVSBridge(object):
         self.uuid_name = 'row' + str(uuid1()).replace('-','_')
         self.uuid = self.uuid_name
 
+    def update(self, update):
+        raise NotImplemented
+
     @classmethod
     def parse(cls, state, uuid, bridge_dict):
         assert type(uuid) in [str, unicode]
@@ -70,3 +73,30 @@ class OVSBridge(object):
             self.columns['ports'] = dict()
         else:
             raise TypeError("Bridge ports should be a dictionary or a list")
+
+    @property
+    def controller(self):
+        return self.columns['controller']
+
+    @controller.setter
+    def controller(self, value):
+        if type(value) is list:
+            self.columns['controller'] = value
+        elif not value:
+            self.columns['controller'] = ['set',[]]
+        else:
+            raise TypeError('value must be a list')
+
+
+    @property
+    def fail_mode(self):
+        return self.columns['fail_mode']
+
+    @fail_mode.setter
+    def fail_mode(self, value):
+        if type(value) is list:
+            self.columns['fail_mode'] = value
+        elif not value:
+            self.columns['fail_mode'] = ['set',[]]
+        else:
+            raise TypeError('value must be a list')

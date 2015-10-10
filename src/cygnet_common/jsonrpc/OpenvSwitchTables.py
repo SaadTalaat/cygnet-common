@@ -97,8 +97,7 @@ class BridgeTable(BaseTable):
 class OpenvSwitchTable(BaseTable):
     name        = 'Open_vSwitch'
     columns         = ["invalid","bridges",
-                        "cur_cfg","next_cfg","manager_options",
-                        "ovs_version"]
+                        "cur_cfg","next_cfg","manager_options"]
 
     BRIDGES         = 2 ** columns.index("bridges")
     CUR_CFG         = 2 ** columns.index("cur_cfg")
