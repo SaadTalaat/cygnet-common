@@ -8,8 +8,6 @@ class OVSwitch(object):
             setattr(self, column, None)
         self.state = state
 
-    def update(self, update):
-        raise NotImplemented
 
     @classmethod
     def parse(cls, state, uuid, switch_dict):
@@ -91,6 +89,6 @@ class OVSwitch(object):
         if type(value) is list:
             self.columns['manager_options'] = value
         elif not value:
-            self.columns['manager_options'] = ['set'[]]
+            self.columns['manager_options'] = ['set',[]]
         else:
             raise TypeError("value must be an integer")

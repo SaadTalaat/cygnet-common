@@ -118,11 +118,35 @@ class OpenvSwitchClient(object):
             res = json.loads(response)
             transaction.handleResult(res)
             self.update_notification(res)
+        from pprint import pprint
+        pprint(self.ovs_state.bridges)
         #print "RESPONSE"
         #print responses
         self.cur_id +=1
         #pprint(transaction)
 
+    def removeBridge(self, bridge_name):
+        print 'DELETEING', bridge_name
+        switch = self.ovs_state.switch
+        bridge = None
+        if bridge_name in \
+                [br.name for br in switch.bridges.values()]:
+                    bridge = [br for br in switch.bridges.values() if br.name == bridge_name][0]
+
+        transaction = Transaction(self.cur_id)
+        transaction.addOperation(WaitOperation(switch))
+        self.ovs_state.removeBridge(bridge.uuid)
+        transaction.addOperation(UpdateOperation(switch,['bridges']))
+        transaction.addOperation(MutateOperation(switch,'next_cfg','+='))
+        self.sock.send(json.dumps(transaction))
+        responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
+
+        for response in responses:
+            res = json.loads(response)
+            transaction.handleResult(res)
+            #self.update_notification(res)
+
+        self.cur_id += 1
 
     def cancel_transact(self, transact_id):
         pass

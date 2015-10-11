@@ -13,8 +13,6 @@ class OVSInterface(object):
         self.uuid_name = 'row' + str(uuid1()).replace('-','_')
         self.uuid = self.uuid_name
 
-    def update(self, update):
-        raise NotImplemented
 
     @classmethod
     def parse(cls, state, uuid, interface_dict):

@@ -13,8 +13,6 @@ class OVSBridge(object):
         self.uuid_name = 'row' + str(uuid1()).replace('-','_')
         self.uuid = self.uuid_name
 
-    def update(self, update):
-        raise NotImplemented
 
     @classmethod
     def parse(cls, state, uuid, bridge_dict):
@@ -26,17 +24,18 @@ class OVSBridge(object):
         bridge.uuid = uuid
         bridge.ports = dict()
 
+        ports = []
         for row_state, columns in bridge_dict.iteritems():
             if row_state == 'new':
                 for column, value in columns.iteritems():
                     if column == 'ports' and value[0] == 'set':
-                        ports = []
                         [ports.extend(val) for val in value[1]]
                         ports = [port for port in ports if port != 'uuid']
                     elif column == 'ports':
                         ports = [p for p in value if p != 'uuid']
                     else:
                         setattr(bridge, column, value)
+        print bridge.columns
         for port in ports:
             try:
                 bridge.ports[port] = state.ports[port]

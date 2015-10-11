@@ -72,6 +72,22 @@ class OpenvSwitchState(BaseDict):
                 self.__update_Port(update[1])
             elif table == InterfaceTable.name:
                 self.__update_Interface(update[1])
+    def addBridge(self, bridge):
+        self.switch.addBridge(bridge)
+        self.bridges[bridge.uuid] = bridge
+
+    def removeBridge(self, bridge_id):
+        bridge = self.bridges[bridge_id]
+        for uuid,port in bridge.ports.items():
+            if not port:
+                port = self.ports[uuid]
+            for uuid2, interface in port.interfaces.items():
+                del port.interfaces[uuid2]
+                del self.interfaces[uuid2]
+            del bridge.ports[uuid]
+            del self.ports[uuid]
+        del self.switch.bridges[bridge_id]
+        del self.bridges[bridge_id]
 
     def __update_old__(self, requests, response):
         result = response['result']
@@ -109,29 +125,18 @@ class OpenvSwitchState(BaseDict):
 
     def __update_Interface(self, result):
         for uuid, table_states in result.iteritems():
-            if self.interfaces.has_key(uuid) and self.interfaces[uuid]:
-                self.interfaces[uuid].update(result)
-            else:
-                self.interfaces[uuid] = OVSInterface.parse(self, uuid, table_states)
+            self.interfaces[uuid] = OVSInterface.parse(self, uuid, table_states)
 
     def __update_Port(self, result):
         for uuid, table_states in result.iteritems():
-            if self.ports.has_key(uuid) and self.ports[uuid]:
-                self.ports[uuid].update(result)
-            else:
-                self.ports[uuid] = OVSPort.parse(self, uuid, table_states)
+            self.ports[uuid] = OVSPort.parse(self, uuid, table_states)
 
     def __update_Bridge(self, result):
         for uuid, table_states in result.iteritems():
-            if self.bridges.has_key(uuid) and self.bridges[uuid]:
-                self.bridges[uuid].update(result)
-            else:
-                self.bridges[uuid] = OVSBridge.parse(self, uuid, table_states)
+            self.bridges[uuid] = OVSBridge.parse(self, uuid, table_states)
     def __update_OpenvSwitch(self, result):
         for uuid, table_states in result.iteritems():
-            if self.uuid:
-                self.switch.update(result)
-            else:
+            if not self.uuid:
                 self['uuid'] = uuid
-                self.switch = OVSwitch.parse(self, uuid, table_states)
+            self.switch = OVSwitch.parse(self, uuid, table_states)
 

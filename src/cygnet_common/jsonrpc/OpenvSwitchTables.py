@@ -101,5 +101,5 @@ class OpenvSwitchTable(BaseTable):
 
     BRIDGES         = 2 ** columns.index("bridges")
     CUR_CFG         = 2 ** columns.index("cur_cfg")
+    NEXT_CFG        = 2 ** columns.index("next_cfg")
     MANAGER_OPTIONS = 2 ** columns.index("manager_options")
-    OVS_VERSION     = 2 ** columns.index("ovs_version")
