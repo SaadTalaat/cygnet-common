@@ -35,7 +35,6 @@ class OVSBridge(object):
                         ports = [p for p in value if p != 'uuid']
                     else:
                         setattr(bridge, column, value)
-        print bridge.columns
         for port in ports:
             try:
                 bridge.ports[port] = state.ports[port]

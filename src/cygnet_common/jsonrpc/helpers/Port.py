@@ -62,7 +62,6 @@ class OVSPort(object):
             self.columns['interfaces'] = value
         elif type(value) is list:
             for iface in value:
-                print self.columns
                 self.columns['interfaces'][iface.uuid] = iface
         elif not value:
             self.columns['interfaces'] = dict()

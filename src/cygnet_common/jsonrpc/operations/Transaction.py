@@ -164,16 +164,12 @@ class InsertOperation(Operation):
 
     @instance.setter
     def instance(self, value):
-	print type(value), OVSInterface
         assert type(value) in [OVSBridge, OVSPort, OVSInterface]
         self.table = type(value)
         self.row = value.columns
         self._instance = value
 
     def handleResult(self, result):
-        print "RESULT"
-        print result
-        print '-----------'
         if result.has_key('uuid'):
             self.instance.uuid = str(result['uuid'][1])
             del self.instance.uuid_name

@@ -57,21 +57,25 @@ class OpenvSwitchState(BaseDict):
 
     def update(self, response):
         if response.has_key('result'):
-            updates = response['result'].items()
+            updates = response['result']
         elif response.has_key('params'):
-            updates = response['params'][1].items()
+            updates = response['params'][1]
         else:
             raise TypeError("Invalid updates")
-        for update in updates:
-            table = update[0]
-            if table == OpenvSwitchTable.name:
-                self.__update_OpenvSwitch(update[1])
-            elif table == BridgeTable.name:
-                self.__update_Bridge(update[1])
-            elif table == PortTable.name:
-                self.__update_Port(update[1])
-            elif table == InterfaceTable.name:
-                self.__update_Interface(update[1])
+        if updates.has_key('Interface'):
+            self.__update_Interface(updates['Interface'])
+            del updates['Interface']
+        if updates.has_key('Port'):
+            self.__update_Port(updates['Port'])
+            del updates['Port']
+        if updates.has_key('Bridge'):
+            self.__update_Bridge(updates['Bridge'])
+            del updates['Bridge']
+        if updates.has_key('Open_vSwitch'):
+            self.__update_OpenvSwitch(updates['Open_vSwitch'])
+            del updates['Open_vSwitch']
+        return
+
     def addBridge(self, bridge):
         self.switch.addBridge(bridge)
         self.bridges[bridge.uuid] = bridge
@@ -88,6 +92,21 @@ class OpenvSwitchState(BaseDict):
             del self.ports[uuid]
         del self.switch.bridges[bridge_id]
         del self.bridges[bridge_id]
+        return self.switch
+
+    def removePort(self, port_id):
+        port = self.ports[port_id]
+        bridge = None
+        for uuid, br in self.bridges.iteritems():
+            if br.ports.has_key(port_id):
+                bridge = br
+                break
+        for uuid, iface in port.interfaces.items():
+            if self.interfaces.has_key(uuid):
+                del self.interfaces[uuid]
+        del bridge.ports[port_id]
+        del self.ports[port_id]
+        return bridge
 
     def __update_old__(self, requests, response):
         result = response['result']

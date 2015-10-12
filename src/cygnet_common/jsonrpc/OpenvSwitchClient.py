@@ -74,21 +74,14 @@ class OpenvSwitchClient(object):
 
     def update_notification(self, response):
         if response.has_key('method') and response['method'] == 'update':
-            print "UPDATE",response
             self.ovs_state.update(response)
             return None
         return response
 
     def addBridge(self, bridge_name):
-        '''
-        for adding a bridge, a state much be consistent
-        in order to assure consistency, wait transactions are
-        conducted on state components (Bridge,Ports)
-        '''
         switch = self.ovs_state.switch
         if bridge_name in \
                 [br.name for br in self.ovs_state.bridges.values() if br.name == bridge_name]:
-
                     return None
         transaction = Transaction(self.cur_id)
 
@@ -118,15 +111,9 @@ class OpenvSwitchClient(object):
             res = json.loads(response)
             transaction.handleResult(res)
             self.update_notification(res)
-        from pprint import pprint
-        pprint(self.ovs_state.bridges)
-        #print "RESPONSE"
-        #print responses
         self.cur_id +=1
-        #pprint(transaction)
 
     def removeBridge(self, bridge_name):
-        print 'DELETEING', bridge_name
         switch = self.ovs_state.switch
         bridge = None
         if bridge_name in \
@@ -144,9 +131,85 @@ class OpenvSwitchClient(object):
         for response in responses:
             res = json.loads(response)
             transaction.handleResult(res)
-            #self.update_notification(res)
-
         self.cur_id += 1
+
+
+    def bridgeExists(self, br_name):
+        if br_name in \
+                [br.name for br in self.ovs_state.bridges.itervalues()]:
+                    return True
+        return False
+
+    def portExists(self, port_name):
+        if port_name in \
+                [port.name for port in self.ovs_state.ports.itervalues()]:
+                    return True
+        return False
+
+    def interfaceExists(self, if_name):
+        if if_name in \
+                [iface.name for iface in self.ovs_state.interfaces.itervalues()]:
+                    return True
+        return False
+
+    def addPort(self, bridge_name, port_name):
+        if bridge_name not in \
+                [br.name for br in self.ovs_state.bridges.itervalues()]:
+                    return False
+        if port_name in \
+                [port.name for port in self.ovs_state.ports.itervalues()]:
+                    return False
+        transaction = Transaction(self.cur_id)
+        for instance in self.ovs_state.bridges.values() + self.ovs_state.ports.values():
+            transaction.addOperation(WaitOperation(instance))
+        switch = self.ovs_state.switch
+        iface = OVSInterface(port_name)
+        port = OVSPort(port_name,[iface])
+        transaction.addOperation(InsertOperation(iface))
+        transaction.addOperation(InsertOperation(port))
+        bridge = None
+        for br in self.ovs_state.bridges.itervalues():
+            if br.name == bridge_name:
+                bridge = br
+                break
+        bridge.ports[port.uuid] = port
+        transaction.addOperation(UpdateOperation(bridge, 'ports'))
+        transaction.addOperation(MutateOperation(switch, 'next_cfg', '+='))
+        self.sock.send(json.dumps(transaction))
+        del bridge.ports[port.uuid]
+        responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
+        for response in responses:
+            res = json.loads(response)
+            transaction.handleResult(res)
+            self.update_notification(res)
+        self.cur_id +=1
+        return True
+
+    def removePort(self, port_name):
+        if port_name not in \
+                [port.name for port in self.ovs_state.ports.itervalues()]:
+                    return False
+        switch = self.ovs_state.switch
+        transaction = Transaction(self.cur_id)
+        for instance in self.ovs_state.bridges.values() + self.ovs_state.ports.values():
+            transaction.addOperation(WaitOperation(instance))
+
+        port = None
+        for p in self.ovs_state.ports.itervalues():
+            if p.name == port_name:
+                port = p
+                break
+        bridge = self.ovs_state.removePort(port.uuid)
+        transaction.addOperation(UpdateOperation(bridge, 'ports'))
+        transaction.addOperation(MutateOperation(switch, 'next_cfg', '+='))
+        self.sock.send(json.dumps(transaction))
+
+        responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
+        for response in responses:
+            res = json.loads(response)
+            transaction.handleResult(res)
+        self.cur_id +=1
+        return True
 
     def cancel_transact(self, transact_id):
         pass
