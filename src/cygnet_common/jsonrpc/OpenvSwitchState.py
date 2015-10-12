@@ -61,7 +61,8 @@ class OpenvSwitchState(BaseDict):
         elif response.has_key('params'):
             updates = response['params'][1]
         else:
-            raise TypeError("Invalid updates")
+            raise NotImplementedError("Invalid updates")
+
         if updates.has_key('Interface'):
             self.__update_Interface(updates['Interface'])
             del updates['Interface']

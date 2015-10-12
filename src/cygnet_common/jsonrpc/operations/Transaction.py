@@ -3,6 +3,7 @@ from cygnet_common.jsonrpc.helpers.Switch import OVSwitch
 from cygnet_common.jsonrpc.helpers.Port import OVSPort
 from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
 from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
+from cygnet_common.jsonrpc.OVSExceptions import *
 from uuid import uuid1
 
 class Transaction(BaseDict):
@@ -27,21 +28,19 @@ class Transaction(BaseDict):
 
     def handleResult(self, response):
         if not response.has_key('result'):
-            return None
+            return
         result = response['result']
         if result[-1].has_key('error'):
-            raise NotImplemented("Implement Transaction errors as Exceptions")
+            raise OVSTransactionFailed(result)
         for index,param in enumerate(self.params[1:]):
             param.handleResult(result[index])
 
-        return response
 class Operation(BaseDict):
 
 
     def __init__(self, op):
         self._instance = None
         self['op'] = op
-        return
 
 
     @property
@@ -50,7 +49,8 @@ class Operation(BaseDict):
 
     @instance.setter
     def instance(self, value):
-        assert type(value) in [OVSwitch, OVSBridge, OVSPort, OVSInterface]
+        if type(value) in [OVSwitch, OVSBridge, OVSPort, OVSInterface]:
+            raise OVSInvalidInstance
         self._instance = value
 
     def handleResult(self, result):

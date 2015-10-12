@@ -6,6 +6,7 @@ from cygnet_common.jsonrpc.operations.Transaction import *
 from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
 from cygnet_common.jsonrpc.helpers.Port import OVSPort
 from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
+from cygnet_common.jsonrpc.OVSExceptions import *
 
 class OpenvSwitchClient(object):
 
@@ -25,7 +26,7 @@ class OpenvSwitchClient(object):
             self.sock.connect( tuple( db_peer[ db_peer.find('//') + 2 :].split(":") ) )
 
         else:
-            raise NotImplementedError
+            raise OVSUnsupportedProtocol
 
         self.cur_id = 0
         self.monitor_id = None
@@ -82,7 +83,8 @@ class OpenvSwitchClient(object):
         switch = self.ovs_state.switch
         if bridge_name in \
                 [br.name for br in self.ovs_state.bridges.values() if br.name == bridge_name]:
-                    return None
+                    raise OVSBridgeExists(bridge_name)
+
         transaction = Transaction(self.cur_id)
 
         ## Generate Wait operations
@@ -106,7 +108,7 @@ class OpenvSwitchClient(object):
         self.sock.send(json.dumps(transaction))
         del switch.bridges[bridge.uuid]
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
-
+        print responses
         for response in responses:
             res = json.loads(response)
             transaction.handleResult(res)
@@ -119,6 +121,8 @@ class OpenvSwitchClient(object):
         if bridge_name in \
                 [br.name for br in switch.bridges.values()]:
                     bridge = [br for br in switch.bridges.values() if br.name == bridge_name][0]
+        else:
+            raise OVSNoSuchBridge(bridge_name)
 
         transaction = Transaction(self.cur_id)
         transaction.addOperation(WaitOperation(switch))
@@ -155,10 +159,11 @@ class OpenvSwitchClient(object):
     def addPort(self, bridge_name, port_name):
         if bridge_name not in \
                 [br.name for br in self.ovs_state.bridges.itervalues()]:
-                    return False
+                    raise OVSNoSuchBridge(bridge_name)
         if port_name in \
                 [port.name for port in self.ovs_state.ports.itervalues()]:
-                    return False
+                    raise OVSPortExists(port_name)
+
         transaction = Transaction(self.cur_id)
         for instance in self.ovs_state.bridges.values() + self.ovs_state.ports.values():
             transaction.addOperation(WaitOperation(instance))
@@ -188,7 +193,8 @@ class OpenvSwitchClient(object):
     def removePort(self, port_name):
         if port_name not in \
                 [port.name for port in self.ovs_state.ports.itervalues()]:
-                    return False
+                    raise OVSNoSuchPort(port_name)
+
         switch = self.ovs_state.switch
         transaction = Transaction(self.cur_id)
         for instance in self.ovs_state.bridges.values() + self.ovs_state.ports.values():
