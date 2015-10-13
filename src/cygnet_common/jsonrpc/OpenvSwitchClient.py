@@ -7,12 +7,14 @@ from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
 from cygnet_common.jsonrpc.helpers.Port import OVSPort
 from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
 from cygnet_common.jsonrpc.OVSExceptions import *
-
+from cygnet_common.Meta.Patterns import Singleton
 class OpenvSwitchClient(object):
 
     BUFF_SIZE = 32768
-    def __init__(self, db_peer):
-        if type(db_peer) not in [str,unicode]:
+    cur_id = 0
+    __metaclass__ = Singleton
+    def __init__(self, db_peer=None):
+        if type(db_peer) not in [str,unicode] and not self.db_peer:
             raise TypeError,"Database address should be in string format"
 
         protocol = db_peer[:db_peer.find('//')-1]
@@ -28,10 +30,21 @@ class OpenvSwitchClient(object):
         else:
             raise OVSUnsupportedProtocol
 
-        self.cur_id = 0
         self.monitor_id = None
         self.ovs_state = OpenvSwitchState()
-    def get_responses(self, response_str):
+
+    def commit(self, transaction):
+        if not isinstance(transaction, Transaction):
+            raise OVSValueError("Unexpected Transaction Value")
+        self.sock.send(json.dumps(transaction))
+        responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
+        for response in responses:
+            res = json.loads(response)
+            transaction.handleResult(res)
+            self.update_notification(res)
+        self.cur_id +=1
+
+    def get_responses(response_str):
         objects = []
         while response_str.find('}{') != -1:
             obj = response_str[:response_str.find('}{')+1]
@@ -216,6 +229,18 @@ class OpenvSwitchClient(object):
             transaction.handleResult(res)
         self.cur_id +=1
         return True
+
+    def getBridge(self, bridge_name):
+        for bridge in self.state.bridges.itervalues():
+            if bridge.name == bridge_name:
+                return bridge
+        raise IndexError("No such bridge")
+
+    def getPort(self, port_name):
+        for port in self.state.ports.itervalues():
+            if port.name == port_name:
+                return port
+        raise IndexError("No such port")
 
     def cancel_transact(self, transact_id):
         pass

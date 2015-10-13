@@ -8,7 +8,7 @@ from uuid import uuid1
 
 class Transaction(BaseDict):
 
-    def __init__(self, cur_id):
+    def __init__(self, cur_id=0):
         self['method']  = 'transact'
         self['id']      = cur_id
         self['params']   = ['Open_vSwitch']
