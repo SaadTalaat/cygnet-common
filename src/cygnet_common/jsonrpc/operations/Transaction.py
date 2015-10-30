@@ -29,7 +29,7 @@ class Transaction(BaseDict):
     def handleResult(self, response):
         if 'result' not in response:
             return
-        print response
+        print(response)
         result = response['result']
         if 'error' in result[-1]:
             raise OVSExceptions.OVSTransactionFailed(result)

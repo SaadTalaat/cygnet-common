@@ -115,7 +115,7 @@ class OpenvSwitchClient(object):
         self.sock.send(json.dumps(transaction))
         del switch.bridges[bridge.uuid]
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
-        print responses
+        print(responses)
         for response in responses:
             res = json.loads(response)
             transaction.handleResult(res)
@@ -278,7 +278,7 @@ class OpenvSwitchClient(object):
     def setInterfaceProperty(self, interface_name, option, value):
         interface = self.getInterface(interface_name)
         if hasattr(interface, option):
-            print 'VALUE', value
+            print('VALUE', value)
             setattr(interface, option, value)
 
         t = Transaction(self.cur_id)
@@ -286,7 +286,7 @@ class OpenvSwitchClient(object):
         t.addOperation(MutateOperation(self.ovs_state.switch, 'next_cfg', '+='))
         self.sock.send(json.dumps(t))
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
-        print "OPTIONS:", interface.columns
+        print("OPTIONS:", interface.columns)
         for response in responses:
             res = json.loads(response)
             t.handleResult(res)

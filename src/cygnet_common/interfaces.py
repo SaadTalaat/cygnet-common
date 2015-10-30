@@ -72,7 +72,7 @@ class openvswitch(dict):
             self.addr = self.addr[0], str(self.addr[1])
             self.interfaces.append(('br1', self.addr))
         except Exception as e:
-            print e
+            print(e)
         finally:
             ip.release()
         self.range_buckets[int(self.addr[0].split(".")[-1])] = 1
@@ -84,7 +84,7 @@ class openvswitch(dict):
             addr = self['internal_ip'].split('/')[0]
             mask = int(self['internal_ip'].split('/')[1])
         except KeyError as e:
-            print "OpenvSwitch: CYGNET_INTERNAL_IP environment variable not found"
+            print("OpenvSwitch: CYGNET_INTERNAL_IP environment variable not found")
             raise e
         ip.addr('add',
                 index=(ip.link_lookup(ifname='br2')),
@@ -130,7 +130,7 @@ class openvswitch(dict):
                 self.range_buckets[addr_idx] = containerId
                 run("pipework br2 -i eth1 " + containerId + " " + addr)
             else:
-                print "Error connecting container", containerId + ": Address Already taken by container: ", self.range_buckets[addr_idx]
+                print("Error connecting container", containerId + ": Address Already taken by container: ", self.range_buckets[addr_idx])
 
     def disconnectContainer(self, *containers):
         for c in containers:

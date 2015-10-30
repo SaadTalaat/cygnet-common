@@ -66,7 +66,7 @@ class OVSInterface(object):
         elif not value:
             self.columns['options'] = OVSMap()
         else:
-            print type(value)
+            print(type(value))
             raise TypeError("value must be a list")
 
     @property

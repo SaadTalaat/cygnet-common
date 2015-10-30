@@ -33,11 +33,9 @@ class OVSMap(list):
         elif not l:
             return
         else:
-            print l
             raise TypeError("Value must be a list of OVSAtoms")
 
     def append(self, atom):
-        print self
         self[1].append(atom)
 
 

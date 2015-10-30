@@ -72,7 +72,7 @@ class NetworkInterface(dict):
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
             if endpoint in self.endpoints:
-                print "NetworkInterface: Communication with remote endpoint already established"
+                print("NetworkInterface: Communication with remote endpoint already established")
                 endpoints.remove(endpoint)
         self.network.addEndpoint(*endpoints)
 

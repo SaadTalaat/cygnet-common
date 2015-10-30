@@ -9,10 +9,8 @@ class TaskInterval(threading.Thread):
         self.args = args
         threading.Thread.__init__(self)
         self.setDaemon(True)
-        print "[Task Interval] Registered"
 
     def run(self):
-        print "[Task Interval] Running"
         while True:
             time.sleep(self.interval)
             if self.args:
