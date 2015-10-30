@@ -59,7 +59,8 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     install_requires=[
-        # eg: 'aspectlib==1.1.1', 'six>=1.7',
+         # eg: 'aspectlib==1.1.1', 'six>=1.7',
+        'pyroute2','sarge'
     ],
     extras_require={
         # eg:
