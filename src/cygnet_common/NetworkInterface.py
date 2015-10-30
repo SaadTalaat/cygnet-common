@@ -1,4 +1,4 @@
-import interfaces
+from cygnet_common import interfaces
 from cygnet_common.Structures import CallbackList
 
 
