@@ -14,13 +14,6 @@ class OVSBridge(object):
         self.uuid = self.uuid_name
         self.state = None
 
-    def commit(self):
-        client = OpenvSwitchClient()
-        t = Transaction(client.cur_id)
-        t.addOperation(WaitOperation(self))
-        t.addOperation(UpdateOperation(self))
-        t.addOperation(MutateOperation(self.state.switch, 'next_cfg','+='))
-        client.commit(t)
 
     @classmethod
     def parse(cls, state, uuid, bridge_dict):
@@ -113,8 +106,10 @@ class OVSBridge(object):
 
     @stp_enable.setter
     def stp_enable(self, val):
-        if type(val) is not bool and not val:
+        if not val:
             self.columns['stp_enable'] = False
+            return
+        elif type(val) is not bool:
             raise TypeError('value must be bool')
         self.columns['stp_enable'] = val
 

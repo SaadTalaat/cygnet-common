@@ -86,12 +86,13 @@ class InterfaceTable(BaseTable):
 
 class BridgeTable(BaseTable):
     name    = 'Bridge'
-    columns     = ["invalid","controller","fail_mode","name","ports"]
+    columns     = ["invalid","controller","fail_mode","name","ports", "stp_enable"]
 
     CONTROLLER  = 2 ** columns.index("controller")
     FAIL_MODE   = 2 ** columns.index("fail_mode")
     NAME        = 2 ** columns.index("name")
     PORTS       = 2 ** columns.index("ports")
+    STP_ENABLE  = 2 ** columns.index("stp_enable")
 
 
 class OpenvSwitchTable(BaseTable):

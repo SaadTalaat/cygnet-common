@@ -29,6 +29,7 @@ class Transaction(BaseDict):
     def handleResult(self, response):
         if not response.has_key('result'):
             return
+        print response
         result = response['result']
         if result[-1].has_key('error'):
             raise OVSTransactionFailed(result)
@@ -271,7 +272,9 @@ class UpdateOperation(Operation):
     @row.setter
     def row(self, row_dict):
         for column, value in row_dict.iteritems():
-            if column in ['ports','interfaces','bridges']:
+            if column == 'name':
+                continue
+            elif column in ['ports','interfaces','bridges']:
                 self['row'][column] = ['set',[]]
                 for entry_id,entry in value.iteritems():
                     if entry_id[:3] == 'row':

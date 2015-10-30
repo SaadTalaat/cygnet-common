@@ -1,4 +1,5 @@
 from cygnet_common.jsonrpc.OpenvSwitchTables import InterfaceTable
+from cygnet_common.jsonrpc.types import *
 from uuid import uuid1
 
 class OVSInterface(object):
@@ -60,11 +61,12 @@ class OVSInterface(object):
 
     @options.setter
     def options(self, value):
-        if type(value) is list:
-            self.columns['options'] = value
+        if isinstance(value, list):
+            self.columns['options'] = OVSMap(value)
         elif not value:
-            self.columns['options']= ['map',[]]
+            self.columns['options']= OVSMap()
         else:
+            print type(value)
             raise TypeError("value must be a list")
 
     @property

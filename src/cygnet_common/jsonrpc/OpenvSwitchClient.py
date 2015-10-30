@@ -7,12 +7,10 @@ from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
 from cygnet_common.jsonrpc.helpers.Port import OVSPort
 from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
 from cygnet_common.jsonrpc.OVSExceptions import *
-from cygnet_common.Meta.Patterns import Singleton
 class OpenvSwitchClient(object):
 
     BUFF_SIZE = 32768
     cur_id = 0
-    __metaclass__ = Singleton
     def __init__(self, db_peer=None):
         if type(db_peer) not in [str,unicode] and not self.db_peer:
             raise TypeError,"Database address should be in string format"
@@ -44,7 +42,7 @@ class OpenvSwitchClient(object):
             self.update_notification(res)
         self.cur_id +=1
 
-    def get_responses(response_str):
+    def get_responses(self, response_str):
         objects = []
         while response_str.find('}{') != -1:
             obj = response_str[:response_str.find('}{')+1]
@@ -231,16 +229,81 @@ class OpenvSwitchClient(object):
         return True
 
     def getBridge(self, bridge_name):
-        for bridge in self.state.bridges.itervalues():
+        for bridge in self.ovs_state.bridges.itervalues():
             if bridge.name == bridge_name:
                 return bridge
         raise IndexError("No such bridge")
 
     def getPort(self, port_name):
-        for port in self.state.ports.itervalues():
+        for port in self.ovs_state.ports.itervalues():
             if port.name == port_name:
                 return port
         raise IndexError("No such port")
+
+    def getInterface(self, interface_name):
+        for interface in self.ovs_state.interfaces.itervalues():
+            if interface.name == interface_name:
+                return interface
+        raise IndexError("No such port")
+
+    def setBridgeProperty(self, bridge_name, option, value):
+        bridge = self.getBridge(bridge_name)
+        if hasattr(bridge, option):
+            setattr(bridge,option, value)
+        t = Transaction(self.cur_id)
+        t.addOperation(WaitOperation(bridge))
+        t.addOperation(UpdateOperation(bridge))
+        from pprint import pprint
+        pprint (t)
+        t.addOperation(MutateOperation(self.ovs_state.switch,'next_cfg', '+='))
+        self.sock.send(json.dumps(t))
+
+        responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
+        for response in responses:
+            res = json.loads(response)
+            t.handleResult(res)
+            self.update_notification(res)
+        self.cur_id +=1
+
+    def setPortProperty(self, port_name, option, value):
+        port = self.getPort(port_name)
+        if hasattr(port, option):
+            setattr(port,option, value)
+        t = Transaction(self.cur_id)
+        t.addOperation(WaitOperation(port))
+        t.addOperation(UpdateOperation(port))
+        from pprint import pprint
+        pprint (t)
+        t.addOperation(MutateOperation(self.ovs_state.switch,'next_cfg', '+='))
+        self.sock.send(json.dumps(t))
+
+        responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
+        for response in responses:
+            res = json.loads(response)
+            t.handleResult(res)
+            self.update_notification(res)
+        self.cur_id +=1
+
+    def setInterfaceProperty(self, interface_name, option, value):
+        interface = self.getInterface(interface_name)
+        if hasattr(interface, option):
+            print 'VALUE',value
+            setattr(interface,option, value)
+
+        t = Transaction(self.cur_id)
+        t.addOperation(UpdateOperation(interface))
+        from pprint import pprint
+        pprint (t)
+        t.addOperation(MutateOperation(self.ovs_state.switch,'next_cfg', '+='))
+        self.sock.send(json.dumps(t))
+        responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
+        print "OPTIONS:", interface.columns
+        for response in responses:
+            res = json.loads(response)
+            t.handleResult(res)
+            self.update_notification(res)
+        interface = self.getInterface(interface_name)
+        self.cur_id +=1
 
     def cancel_transact(self, transact_id):
         pass
