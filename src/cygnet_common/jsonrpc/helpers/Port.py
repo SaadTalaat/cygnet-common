@@ -1,19 +1,18 @@
-
 from cygnet_common.jsonrpc.OpenvSwitchTables import PortTable
 from uuid import uuid1
 
+
 class OVSPort(object):
 
-    def __init__(self,name=None, interfaces=None):
+    def __init__(self, name=None, interfaces=None):
         self.columns = dict()
         for column in PortTable.columns[1:]:
             setattr(self, column, None)
         self.name = name
         if interfaces:
             self.interfaces = interfaces
-        self.uuid_name = 'row' + str(uuid1()).replace('-','_')
+        self.uuid_name = 'row' + str(uuid1()).replace('-', '_')
         self.uuid = self.uuid_name
-
 
     @classmethod
     def parse(cls, state, uuid, port_dict):
@@ -34,9 +33,9 @@ class OVSPort(object):
         for iface in interfaces:
             try:
                 port.interfaces[iface] = state.interfaces[iface]
-            except KeyError as e:
+            except KeyError:
                 state.interfaces[iface] = None
-                port.interfaces[iface]  = None
+                port.interfaces[iface] = None
         return port
 
     @property
@@ -77,7 +76,7 @@ class OVSPort(object):
         if type(value) is list:
             self.columns['tag'] = value
         elif not value:
-            self.columns['tag']= ['set',[]]
+            self.columns['tag'] = ['set', []]
         else:
             raise TypeError("Port tags must be a list")
 
@@ -90,6 +89,6 @@ class OVSPort(object):
         if type(value) is list:
             self.columns['trunks'] = value
         elif not value:
-            self.columns['trunks']= ['set',[]]
+            self.columns['trunks'] = ['set', []]
         else:
             raise TypeError("Port trunks must be a list")

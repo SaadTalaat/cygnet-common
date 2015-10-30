@@ -1,5 +1,6 @@
 from cygnet_common.jsonrpc.OpenvSwitchTables import OpenvSwitchTable
 
+
 class OVSwitch(object):
 
     def __init__(self, state, bridges=None):
@@ -8,10 +9,9 @@ class OVSwitch(object):
             setattr(self, column, None)
         self.state = state
 
-
     @classmethod
     def parse(cls, state, uuid, switch_dict):
-        assert type(uuid) in [unicode,str]
+        assert type(uuid) in [unicode, str]
         assert type(switch_dict) is dict
         assert len(switch_dict) > 0
         switch = cls(state)
@@ -30,7 +30,7 @@ class OVSwitch(object):
         for bridge in bridges:
             try:
                 switch.bridges[bridge] = state.bridges[bridge]
-            except KeyError as e:
+            except KeyError:
                 state.bridges[bridge] = None
                 switch.bridges[bridge] = None
         return switch
@@ -89,6 +89,6 @@ class OVSwitch(object):
         if type(value) is list:
             self.columns['manager_options'] = value
         elif not value:
-            self.columns['manager_options'] = ['set',[]]
+            self.columns['manager_options'] = ['set', []]
         else:
             raise TypeError("value must be an integer")

@@ -1,12 +1,13 @@
-from cygnet_common.jsonrpc.OpenvSwitchTables import *
+from cygnet_common.jsonrpc import OpenvSwitchTables as OVSTables
 from cygnet_common.jsonrpc.helpers.Port import OVSPort
 from cygnet_common.jsonrpc.helpers.Interface import OVSInterface
 from cygnet_common.jsonrpc.helpers.Bridge import OVSBridge
 from cygnet_common.jsonrpc.helpers.Switch import OVSwitch
-
 from cygnet_common.Structures import BaseDict
 
+
 class OpenvSwitchState(BaseDict):
+
     '''
     Initially, OpenvSwitchState should include the current OVS
     bridges with their corresponding ports,interfaces and controllers
@@ -40,39 +41,38 @@ class OpenvSwitchState(BaseDict):
     }
     '''
 
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         if kwargs:
             # Copy another state
             # XXX: Validate given state
             dict.__init__(self, **kwargs)
         else:
             # Make empty state
-            self['bridges']     = BaseDict()
-            self['ports']       = BaseDict()
-            self['interfaces']  = BaseDict()
+            self['bridges'] = BaseDict()
+            self['ports'] = BaseDict()
+            self['interfaces'] = BaseDict()
             self['ovs_version'] = None
-            self['cur_cfg']     = None
-            self['uuid']        = None
-
+            self['cur_cfg'] = None
+            self['uuid'] = None
 
     def update(self, response):
-        if response.has_key('result'):
+        if 'result' in response:
             updates = response['result']
-        elif response.has_key('params'):
+        elif 'params' in response:
             updates = response['params'][1]
         else:
             raise NotImplementedError("Invalid updates")
 
-        if updates.has_key('Interface'):
+        if 'Interface' in updates:
             self.__update_Interface(updates['Interface'])
             del updates['Interface']
-        if updates.has_key('Port'):
+        if 'Port' in updates:
             self.__update_Port(updates['Port'])
             del updates['Port']
-        if updates.has_key('Bridge'):
+        if 'Bridge' in updates:
             self.__update_Bridge(updates['Bridge'])
             del updates['Bridge']
-        if updates.has_key('Open_vSwitch'):
+        if 'Open_vSwitch' in updates:
             self.__update_OpenvSwitch(updates['Open_vSwitch'])
             del updates['Open_vSwitch']
         return
@@ -83,7 +83,7 @@ class OpenvSwitchState(BaseDict):
 
     def removeBridge(self, bridge_id):
         bridge = self.bridges[bridge_id]
-        for uuid,port in bridge.ports.items():
+        for uuid, port in bridge.ports.items():
             if not port:
                 port = self.ports[uuid]
             for uuid2, interface in port.interfaces.items():
@@ -99,11 +99,11 @@ class OpenvSwitchState(BaseDict):
         port = self.ports[port_id]
         bridge = None
         for uuid, br in self.bridges.iteritems():
-            if br.ports.has_key(port_id):
+            if port_id in br.ports:
                 bridge = br
                 break
         for uuid, iface in port.interfaces.items():
-            if self.interfaces.has_key(uuid):
+            if uuid in self.interfaces:
                 del self.interfaces[uuid]
         del bridge.ports[port_id]
         del self.ports[port_id]
@@ -114,34 +114,33 @@ class OpenvSwitchState(BaseDict):
         requests = self.__sort_Requests(requests)
         for request in requests:
             table = request.name
-            if not result.has_key(table):
+            if table not in result:
                 continue
-            if table == OpenvSwitchTable.name:
+            if table == OVSTables.OpenvSwitchTable.name:
                 self.__update_OpenvSwitch(result[table])
-            elif table == BridgeTable.name:
+            elif table == OVSTables.BridgeTable.name:
                 self.__update_Bridge(result[table])
-            elif table == PortTable.name:
+            elif table == OVSTables.PortTable.name:
                 self.__update_Port(result[table])
-            elif table == InterfaceTable.name:
+            elif table == OVSTables.InterfaceTable.name:
                 self.__update_Interface(result[table])
 
     def __sort_Requests(self, requests):
         from enum import Enum
-        req_enum    = Enum('requests','Interface Port Bridge Open_vSwitch')
+        req_enum = Enum('requests', 'Interface Port Bridge Open_vSwitch')
         if len(req_enum) >= len(requests):
-            result  = [None]*len(req_enum)
+            result = [None]*len(req_enum)
         else:
-            result  = [None]*len(requests)
-        for i in range(0,len(requests)):
-            r   = requests[i]
+            result = [None]*len(requests)
+        for i in range(0, len(requests)):
+            r = requests[i]
             idx = req_enum[r.name].value - 1
             result[idx] = r
 
         result = filter(lambda x: x, result)
-        requests = [r for r in requests if r not in result]
+        requests = [req for req in requests if r not in result]
         result.extend(requests)
         return result
-
 
     def __update_Interface(self, result):
         for uuid, table_states in result.iteritems():
@@ -154,9 +153,9 @@ class OpenvSwitchState(BaseDict):
     def __update_Bridge(self, result):
         for uuid, table_states in result.iteritems():
             self.bridges[uuid] = OVSBridge.parse(self, uuid, table_states)
+
     def __update_OpenvSwitch(self, result):
         for uuid, table_states in result.iteritems():
             if not self.uuid:
                 self['uuid'] = uuid
             self.switch = OVSwitch.parse(self, uuid, table_states)
-

@@ -1,19 +1,19 @@
 from cygnet_common.jsonrpc.OpenvSwitchTables import BridgeTable
 from uuid import uuid1
 
+
 class OVSBridge(object):
 
-    def __init__(self,name=None, ports=None):
+    def __init__(self, name=None, ports=None):
         self.columns = dict()
         for column in BridgeTable.columns[1:]:
             setattr(self, column, None)
         self.name = name
         if ports:
             self.ports = ports
-        self.uuid_name = 'row' + str(uuid1()).replace('-','_')
+        self.uuid_name = 'row' + str(uuid1()).replace('-', '_')
         self.uuid = self.uuid_name
         self.state = None
-
 
     @classmethod
     def parse(cls, state, uuid, bridge_dict):
@@ -39,7 +39,7 @@ class OVSBridge(object):
         for port in ports:
             try:
                 bridge.ports[port] = state.ports[port]
-            except KeyError as e:
+            except KeyError:
                 state.ports[port] = None
                 bridge.ports[port] = None
         return bridge
@@ -82,10 +82,9 @@ class OVSBridge(object):
         if type(value) is list:
             self.columns['controller'] = value
         elif not value:
-            self.columns['controller'] = ['set',[]]
+            self.columns['controller'] = ['set', []]
         else:
             raise TypeError('value must be a list')
-
 
     @property
     def fail_mode(self):
@@ -96,7 +95,7 @@ class OVSBridge(object):
         if type(value) is list:
             self.columns['fail_mode'] = value
         elif not value:
-            self.columns['fail_mode'] = ['set',[]]
+            self.columns['fail_mode'] = ['set', []]
         else:
             raise TypeError('value must be a list')
 
@@ -112,4 +111,3 @@ class OVSBridge(object):
         elif type(val) is not bool:
             raise TypeError('value must be bool')
         self.columns['stp_enable'] = val
-
