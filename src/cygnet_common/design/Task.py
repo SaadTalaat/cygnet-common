@@ -1,6 +1,7 @@
 import threading
 import time
 
+
 class TaskInterval(threading.Thread):
     def __init__(self, interval, task, args=None):
         self.task = task

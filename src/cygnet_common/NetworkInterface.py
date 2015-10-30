@@ -1,5 +1,7 @@
 import interfaces
 from cygnet_common.Structures import CallbackList
+
+
 class NetworkInterface(dict):
 
     '''
@@ -25,8 +27,8 @@ class NetworkInterface(dict):
         self['interfaces'] = kwargs['interfaces']
         self.network = (getattr(interfaces, kwargs['interface_class']))(self, **kwargs)
 
-        self.endpoints.addCallback(list.append,self.addEndpoint)
-        self.endpoints.addCallback(list.remove,self.removeEndpoint)
+        self.endpoints.addCallback(list.append, self.addEndpoint)
+        self.endpoints.addCallback(list.remove, self.removeEndpoint)
         self.endpoints.addCallback(list.pop, self.removeEndpoint)
 
         self.containers.addCallback(list.append, self.connectContainer)
@@ -50,6 +52,7 @@ class NetworkInterface(dict):
                 self[key] = value
             else:
                 raise e
+
     def __delattr__(self, key):
         try:
             dict.__delattr__(self, key)
@@ -65,7 +68,7 @@ class NetworkInterface(dict):
     def initContainerNetwork(self):
         return self.network.initContainerNetwork()
 
-    ##### Functionality oriented methods #####
+    # Functionality oriented methods #####
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
             if endpoint in self.endpoints:
@@ -75,27 +78,26 @@ class NetworkInterface(dict):
 
     def removeEndpoint(self, *endpoints):
         for endpoint in endpoints:
-            if isinstance(endpoint,int) and (len(self.endpoints) < endpoint or endpoint < 0):
+            if isinstance(endpoint, int) and (len(self.endpoints) < endpoint or endpoint < 0):
                 endpoints.pop(endpoint)
-            elif not isinstance(endpoint,int) and self.endpoints.index(endpoint) < 0:
-                print "NetworkInterface: Cannot remove non-existent endpoint"
+            elif not isinstance(endpoint, int) and self.endpoints.index(endpoint) < 0:
+                print("NetworkInterface: Cannot remove non-existent endpoint")
                 endpoints.remove(endpoint)
         self.network.removeEndpoint(*endpoints)
-
 
     def connectContainer(self, *containers):
         for container in containers:
             if container in self.containers:
-                print "NetworkInterface: Container already connected"
+                print("NetworkInterface: Container already connected")
                 containers.remove(container)
         self.network.connectContainer(*containers)
 
     def disconnectContainer(self, *containers):
         for container in containers:
-            if isinstance(container,int) and (len(self.containers) < container or container < 0):
-                print "NetworkInterface: Cannot disconnect container, container isn't connected in the first place"
+            if isinstance(container, int) and (len(self.containers) < container or container < 0):
+                print("NetworkInterface: Cannot disconnect container, container isn't connected in the first place")
                 containers.pop(container)
-            elif not isinstance(container,int) and self.containers.index(container) < 0:
-                print "NetworkInterface: Cannot disconnect container, container isn't connected in the first place"
+            elif not isinstance(container, int) and self.containers.index(container) < 0:
+                print("NetworkInterface: Cannot disconnect container, container isn't connected in the first place")
                 containers.remove(container)
         self.network.disconnectContainer(*containers)

@@ -1,13 +1,12 @@
-
 from pyroute2 import IPRoute, IPDB
 from sarge import run
-from cygnet_common.Structures import CallbackList
+
 
 def __getIPv4Addr__(addr_list):
     '''
     return first ip4 addr it hits
     '''
-    assert isinstance(addr_list,list)
+    assert isinstance(addr_list, list)
     for addr in addr_list:
         try:
             assert (len(addr[0].split(".")) == 4)
@@ -15,6 +14,7 @@ def __getIPv4Addr__(addr_list):
         except:
             continue
     return None
+
 
 class openvswitch(dict):
     '''
@@ -25,17 +25,17 @@ class openvswitch(dict):
         self.range_buckets = {}
         self.tunnel_bucket = {}
         self.interface = interface
-        for i in range(1,255):
+        for i in range(1, 255):
             self.tunnel_bucket[i] = None
             self.range_buckets[i] = None
         self['endpoints'] = kwargs['endpoints']
         self['containers'] = kwargs['containers']
         self['interfaces'] = kwargs['interfaces']
         self['internal_ip'] = kwargs['internal_ip']
-        ## Add callbacks
-        ####
+        # Add callbacks
+        #
         # Should read database here
-        ####
+        #
 
     def __getattribute__(self, key, *args):
         try:
@@ -54,6 +54,7 @@ class openvswitch(dict):
                 self[key] = value
             else:
                 raise e
+
     def __delattr__(self, key):
         try:
             dict.__delattr__(self, key)
@@ -66,11 +67,10 @@ class openvswitch(dict):
     def initalize(self):
         ip = IPDB()
         try:
-            ## Check if public interface is up
+            # Check if public interface is up
             self.addr = __getIPv4Addr__(list(ip.interfaces.br1.ipaddr))
             self.addr = self.addr[0], str(self.addr[1])
-            #self.interface.interfaces.append(('br1',self.addr))
-            self.interfaces.append(('br1',self.addr))
+            self.interfaces.append(('br1', self.addr))
         except Exception as e:
             print e
         finally:
@@ -91,58 +91,53 @@ class openvswitch(dict):
                 address=addr,
                 mask=mask)
         run("ifconfig br2 up")
-        self.interfaces.append(('br2',(self.addr,str(mask))))
+        self.interfaces.append(('br2', (self.addr, str(mask))))
         return addr
 
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
-            keys = [key for key,value in self.tunnel_bucket.iteritems() if value==None]
+            keys = [key for key, value in self.tunnel_bucket.iteritems() if value is None]
             if keys:
                 available = keys[0]
                 self.tunnel_bucket[available] = endpoint
             else:
                 raise IndexError
-            run("ovs-vsctl add-port br2 gre"+str(available)+
-                    " -- set Interface gre"+str(available)+" type=gre options:remote_ip="+(endpoint))
-            #run("establish-gre.sh" + str(endpoint[1]) + " " + endpoint[2])
-            #self.endpoints.append(endpoint)
+            run("ovs-vsctl add-port br2 gre" + str(available) +
+                " -- set Interface gre" + str(available) + " type=gre options:remote_ip=" + (endpoint))
 
     def removeEndpoint(self, *endpoints):
         for e in endpoints:
             endpoint = None
-            if isinstance(e,int):
-              endpoint = self.endpoints[e]
+            if isinstance(e, int):
+                endpoint = self.endpoints[e]
             else:
                 endpoint = e
-            tunnel_idx = [idx for idx,ep in self.tunnel_bucket.iteritems() if ep == endpoint]
+            tunnel_idx = [idx for idx, ep in self.tunnel_bucket.iteritems() if ep == endpoint]
             if tunnel_idx:
                 tunnel_idx = tunnel_idx[0]
             else:
                 raise ValueError
             run("ovs-vsctl del-port gre"+str(tunnel_idx))
             self.tunnel_bucket[tunnel_idx] = None
-            #del self.endpoints[self.endpoints.index(endpoint)]
 
     def connectContainer(self, *containers):
         for container in containers:
             addr = str(container["Address"])
             containerId = str(container["Id"])
             addr_idx = int(addr.split("/")[0].split(".")[-1])
-            available = (self.range_buckets[addr_idx] == None)
+            available = (self.range_buckets[addr_idx] is None)
             if available:
                 self.range_buckets[addr_idx] = containerId
-                run("pipework br2 -i eth1 "+ containerId + " " + addr)
+                run("pipework br2 -i eth1 " + containerId + " " + addr)
             else:
-                print "Error connecting container",containerId+": Address Already taken by container: ",self.range_buckets[addr_idx]
-            #self.containers.append(container)
+                print "Error connecting container", containerId + ": Address Already taken by container: ", self.range_buckets[addr_idx]
 
     def disconnectContainer(self, *containers):
         for c in containers:
-            if isinstance(c,int):
+            if isinstance(c, int):
                 container = self.containers[c]
             else:
                 container = c
             addr = str(container["Address"])
             addr_idx = int(addr.split("/")[0].split(".")[-1])
-            self.range_buckets[addr_idx]= None
-            #del self.containers[self.containers.index(container)]
+            self.range_buckets[addr_idx] = None
