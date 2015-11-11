@@ -33,11 +33,9 @@ class OVSMap(list):
         elif not l:
             return
         else:
-            print l
             raise TypeError("Value must be a list of OVSAtoms")
 
     def append(self, atom):
-        print self
         self[1].append(atom)
 
 
@@ -100,9 +98,9 @@ class OVSSet(list):
 class OVSUUID(OVSAtom):
 
     def __init__(self, uuid=None):
-        if type(uuid) in [str, unicode]:
+        if type(uuid) in [str, str]:
             super(OVSUUID, self).__init__(['uuid', uuid])
-        elif type(uuid) is list and uuid[0] == 'uuid':
+        elif isinstance(uuid, list) and uuid[0] == 'uuid':
             super(OVSUUID, self).__init__(uuid)
         elif not uuid:
             super(OVSUUID, self).__init__(['uuid', ''])
@@ -117,9 +115,9 @@ class OVSUUID(OVSAtom):
 class OVSNUUID(OVSAtom):
 
     def __init__(self, uuid=None):
-        if type(uuid) in [str, unicode]:
+        if type(uuid) in [str, str]:
             super(OVSNUUID, self).__init__(['named-uuid'])
-        elif type(uuid) is list and uuid[0] == 'named-uuid':
+        elif isinstance(uuid, list) and uuid[0] == 'named-uuid':
             super(OVSNUUID, self).__init__(uuid)
         elif not uuid:
             row_uuid = 'row' + str(uuid1()).replace('-', '_')

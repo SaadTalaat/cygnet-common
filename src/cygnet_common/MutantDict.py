@@ -1,10 +1,11 @@
 import collections
 
+
 class MutantDictBase(collections.MutableMapping):
 
     def __init__(self, *args, **kwargs):
         self.internal_dict = dict()
-        self.update(dict(*args,**kwargs))
+        self.update(dict(*args, **kwargs))
 
     def __getitem__(self, key):
         return self.internal_dict[self.__keytransform__(key)]
@@ -23,4 +24,3 @@ class MutantDictBase(collections.MutableMapping):
 
     def __keytransform__(self, key):
         return key
-

@@ -11,15 +11,15 @@ class OVSwitch(object):
 
     @classmethod
     def parse(cls, state, uuid, switch_dict):
-        assert type(uuid) in [unicode, str]
-        assert type(switch_dict) is dict
+        assert type(uuid) in [str, bytes]
+        assert isinstance(switch_dict, dict)
         assert len(switch_dict) > 0
         switch = cls(state)
         switch.uuid = uuid
         switch.bridges = dict()
-        for row_state, columns in switch_dict.iteritems():
+        for row_state, columns in list(switch_dict.items()):
             if row_state == 'new':
-                for column, value in columns.iteritems():
+                for column, value in list(columns.items()):
                     if column == 'bridges':
                         bridges = []
                         [bridges.extend(val) for val in value[1]]
@@ -44,9 +44,9 @@ class OVSwitch(object):
 
     @bridges.setter
     def bridges(self, value):
-        if type(value) is dict:
+        if isinstance(value, dict):
             self.columns['bridges'] = value
-        elif type(value) is list:
+        elif isinstance(value, list):
             for bridge in value:
                 self.columns['bridges'][bridge.uuid] = bridge
         elif not value:
@@ -60,7 +60,7 @@ class OVSwitch(object):
 
     @cur_cfg.setter
     def cur_cfg(self, value):
-        if type(value) is int:
+        if isinstance(value, int):
             self.columns['cur_cfg'] = value
         elif not value:
             self.columns['cur_cfg'] = 0
@@ -73,7 +73,7 @@ class OVSwitch(object):
 
     @next_cfg.setter
     def next_cfg(self, value):
-        if type(value) is int:
+        if isinstance(value, int):
             self.columns['next_cfg'] = value
         elif not value:
             self.columns['next_cfg'] = 0
@@ -86,7 +86,7 @@ class OVSwitch(object):
 
     @manager_options.setter
     def manager_options(self, value):
-        if type(value) is list:
+        if isinstance(value, list):
             self.columns['manager_options'] = value
         elif not value:
             self.columns['manager_options'] = ['set', []]

@@ -16,16 +16,16 @@ class OVSPort(object):
 
     @classmethod
     def parse(cls, state, uuid, port_dict):
-        assert type(uuid) in [str, unicode]
-        assert type(port_dict) is dict
+        assert type(uuid) in [str, bytes]
+        assert isinstance(port_dict, dict)
         assert len(port_dict) > 0
         port = cls()
         port.uuid = uuid
         port.interfaces = dict()
 
-        for row_state, columns in port_dict.iteritems():
+        for row_state, columns in list(port_dict.items()):
             if row_state == 'new':
-                for column, value in columns.iteritems():
+                for column, value in list(columns.items()):
                     if column == 'interfaces':
                         interfaces = [i for i in value if i != 'uuid']
                     else:
@@ -44,7 +44,7 @@ class OVSPort(object):
 
     @name.setter
     def name(self, value):
-        if type(value) in [str, unicode]:
+        if type(value) in [str, bytes]:
             self.columns['name'] = value
         elif not value:
             self.columns['name'] = ''
@@ -57,9 +57,9 @@ class OVSPort(object):
 
     @interfaces.setter
     def interfaces(self, value):
-        if type(value) is dict:
+        if isinstance(value, dict):
             self.columns['interfaces'] = value
-        elif type(value) is list:
+        elif isinstance(value, list):
             for iface in value:
                 self.columns['interfaces'][iface.uuid] = iface
         elif not value:
@@ -73,7 +73,7 @@ class OVSPort(object):
 
     @tag.setter
     def tag(self, value):
-        if type(value) is list:
+        if isinstance(value, list):
             self.columns['tag'] = value
         elif not value:
             self.columns['tag'] = ['set', []]
@@ -86,7 +86,7 @@ class OVSPort(object):
 
     @trunks.setter
     def trunks(self, value):
-        if type(value) is list:
+        if isinstance(value, list):
             self.columns['trunks'] = value
         elif not value:
             self.columns['trunks'] = ['set', []]

@@ -14,7 +14,7 @@ class OpenvSwitchClient(object):
     cur_id = 0
 
     def __init__(self, db_peer=None):
-        if type(db_peer) not in [str, unicode] and not self.db_peer:
+        if type(db_peer) not in [str, bytes] and not self.db_peer:
             raise TypeError("Database address should be in string format")
 
         protocol = db_peer[:db_peer.find('//')-1]
@@ -36,7 +36,7 @@ class OpenvSwitchClient(object):
     def commit(self, transaction):
         if not isinstance(transaction, Transaction):
             raise OVSExceptions.OVSValueError("Unexpected Transaction Value")
-        self.sock.send(json.dumps(transaction))
+        self.sock.send(bytes(json.dumps(transaction)), 'utf-8')
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
         for response in responses:
             res = json.loads(response)
@@ -46,6 +46,7 @@ class OpenvSwitchClient(object):
 
     def get_responses(self, response_str):
         objects = []
+        response_str = response_str.decode('utf-8')
         while response_str.find('}{') != -1:
             obj = response_str[:response_str.find('}{')+1]
             objects.append(obj)
@@ -66,7 +67,7 @@ class OpenvSwitchClient(object):
                    'id': self.cur_id,
                    'params': params
                    }
-        self.sock.send(json.dumps(payload))
+        self.sock.send(bytes(json.dumps(payload), 'utf-8'))
 
         self.monitor_id = self.cur_id
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
@@ -89,13 +90,13 @@ class OpenvSwitchClient(object):
     def addBridge(self, bridge_name):
         switch = self.ovs_state.switch
         if bridge_name in \
-                [br.name for br in self.ovs_state.bridges.values() if br.name == bridge_name]:
+                [br.name for br in list(self.ovs_state.bridges.values()) if br.name == bridge_name]:
                     raise OVSExceptions.OVSBridgeExists(bridge_name)
 
         transaction = Transaction(self.cur_id)
 
         # Generate Wait operations
-        for instance in self.ovs_state.ports.values() + self.ovs_state.bridges.values():
+        for instance in list(self.ovs_state.ports.values()) + list(self.ovs_state.bridges.values()):
             transaction.addOperation(WaitOperation(instance))
 
         # Build sub-components of a bridge
@@ -112,10 +113,10 @@ class OpenvSwitchClient(object):
         switch.addBridge(bridge)
         transaction.addOperation(UpdateOperation(switch, ['bridges']))
         transaction.addOperation(MutateOperation(switch, 'next_cfg', '+='))
-        self.sock.send(json.dumps(transaction))
+        self.sock.send(bytes(json.dumps(transaction), 'utf-8'))
         del switch.bridges[bridge.uuid]
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
-        print responses
+        print(responses)
         for response in responses:
             res = json.loads(response)
             transaction.handleResult(res)
@@ -126,8 +127,8 @@ class OpenvSwitchClient(object):
         switch = self.ovs_state.switch
         bridge = None
         if bridge_name in \
-                [br.name for br in switch.bridges.values()]:
-                    bridge = [br for br in switch.bridges.values() if br.name == bridge_name][0]
+                [br.name for br in list(switch.bridges.values())]:
+                    bridge = [br for br in list(switch.bridges.values()) if br.name == bridge_name][0]
         else:
             raise OVSExceptions.OVSNoSuchBridge(bridge_name)
 
@@ -136,7 +137,7 @@ class OpenvSwitchClient(object):
         self.ovs_state.removeBridge(bridge.uuid)
         transaction.addOperation(UpdateOperation(switch, ['bridges']))
         transaction.addOperation(MutateOperation(switch, 'next_cfg', '+='))
-        self.sock.send(json.dumps(transaction))
+        self.sock.send(bytes(json.dumps(transaction), 'utf-8'))
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
 
         for response in responses:
@@ -146,32 +147,32 @@ class OpenvSwitchClient(object):
 
     def bridgeExists(self, br_name):
         if br_name in \
-                [br.name for br in self.ovs_state.bridges.itervalues()]:
+                [br.name for br in list(self.ovs_state.bridges.values())]:
                     return True
         return False
 
     def portExists(self, port_name):
         if port_name in \
-                [port.name for port in self.ovs_state.ports.itervalues()]:
+                [port.name for port in list(self.ovs_state.ports.values())]:
                     return True
         return False
 
     def interfaceExists(self, if_name):
         if if_name in \
-                [iface.name for iface in self.ovs_state.interfaces.itervalues()]:
+                [iface.name for iface in list(self.ovs_state.interfaces.values())]:
                     return True
         return False
 
     def addPort(self, bridge_name, port_name):
         if bridge_name not in \
-                [br.name for br in self.ovs_state.bridges.itervalues()]:
+                [br.name for br in list(self.ovs_state.bridges.values())]:
                     raise OVSExceptions.OVSNoSuchBridge(bridge_name)
         if port_name in \
-                [port.name for port in self.ovs_state.ports.itervalues()]:
+                [port.name for port in list(self.ovs_state.ports.values())]:
                     raise OVSExceptions.OVSPortExists(port_name)
 
         transaction = Transaction(self.cur_id)
-        for instance in self.ovs_state.bridges.values() + self.ovs_state.ports.values():
+        for instance in list(self.ovs_state.bridges.values()) + list(self.ovs_state.ports.values()):
             transaction.addOperation(WaitOperation(instance))
         switch = self.ovs_state.switch
         iface = OVSInterface(port_name)
@@ -179,14 +180,14 @@ class OpenvSwitchClient(object):
         transaction.addOperation(InsertOperation(iface))
         transaction.addOperation(InsertOperation(port))
         bridge = None
-        for br in self.ovs_state.bridges.itervalues():
+        for br in list(self.ovs_state.bridges.values()):
             if br.name == bridge_name:
                 bridge = br
                 break
         bridge.ports[port.uuid] = port
         transaction.addOperation(UpdateOperation(bridge, 'ports'))
         transaction.addOperation(MutateOperation(switch, 'next_cfg', '+='))
-        self.sock.send(json.dumps(transaction))
+        self.sock.send(bytes(json.dumps(transaction), 'utf-8'))
         del bridge.ports[port.uuid]
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
         for response in responses:
@@ -198,23 +199,23 @@ class OpenvSwitchClient(object):
 
     def removePort(self, port_name):
         if port_name not in \
-                [port.name for port in self.ovs_state.ports.itervalues()]:
+                [port.name for port in list(self.ovs_state.ports.values())]:
                     raise OVSExceptions.OVSNoSuchPort(port_name)
 
         switch = self.ovs_state.switch
         transaction = Transaction(self.cur_id)
-        for instance in self.ovs_state.bridges.values() + self.ovs_state.ports.values():
+        for instance in list(self.ovs_state.bridges.values()) + list(self.ovs_state.ports.values()):
             transaction.addOperation(WaitOperation(instance))
 
         port = None
-        for p in self.ovs_state.ports.itervalues():
+        for p in list(self.ovs_state.ports.values()):
             if p.name == port_name:
                 port = p
                 break
         bridge = self.ovs_state.removePort(port.uuid)
         transaction.addOperation(UpdateOperation(bridge, 'ports'))
         transaction.addOperation(MutateOperation(switch, 'next_cfg', '+='))
-        self.sock.send(json.dumps(transaction))
+        self.sock.send(bytes(json.dumps(transaction), 'utf-8'))
 
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
         for response in responses:
@@ -224,19 +225,19 @@ class OpenvSwitchClient(object):
         return True
 
     def getBridge(self, bridge_name):
-        for bridge in self.ovs_state.bridges.itervalues():
+        for bridge in list(self.ovs_state.bridges.values()):
             if bridge.name == bridge_name:
                 return bridge
         raise IndexError("No such bridge")
 
     def getPort(self, port_name):
-        for port in self.ovs_state.ports.itervalues():
+        for port in list(self.ovs_state.ports.values()):
             if port.name == port_name:
                 return port
         raise IndexError("No such port")
 
     def getInterface(self, interface_name):
-        for interface in self.ovs_state.interfaces.itervalues():
+        for interface in list(self.ovs_state.interfaces.values()):
             if interface.name == interface_name:
                 return interface
         raise IndexError("No such port")
@@ -249,7 +250,7 @@ class OpenvSwitchClient(object):
         t.addOperation(WaitOperation(bridge))
         t.addOperation(UpdateOperation(bridge))
         t.addOperation(MutateOperation(self.ovs_state.switch, 'next_cfg', '+='))
-        self.sock.send(json.dumps(t))
+        self.sock.send(bytes(json.dumps(t), 'utf-8'))
 
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
         for response in responses:
@@ -266,7 +267,7 @@ class OpenvSwitchClient(object):
         t.addOperation(WaitOperation(port))
         t.addOperation(UpdateOperation(port))
         t.addOperation(MutateOperation(self.ovs_state.switch, 'next_cfg', '+='))
-        self.sock.send(json.dumps(t))
+        self.sock.send(bytes(json.dumps(t), 'utf-8'))
 
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
         for response in responses:
@@ -278,15 +279,15 @@ class OpenvSwitchClient(object):
     def setInterfaceProperty(self, interface_name, option, value):
         interface = self.getInterface(interface_name)
         if hasattr(interface, option):
-            print 'VALUE', value
+            print(('VALUE', value))
             setattr(interface, option, value)
 
         t = Transaction(self.cur_id)
         t.addOperation(UpdateOperation(interface))
         t.addOperation(MutateOperation(self.ovs_state.switch, 'next_cfg', '+='))
-        self.sock.send(json.dumps(t))
+        self.sock.send(bytes(json.dumps(t), 'utf-8'))
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
-        print "OPTIONS:", interface.columns
+        print(("OPTIONS:", interface.columns))
         for response in responses:
             res = json.loads(response)
             t.handleResult(res)
