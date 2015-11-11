@@ -111,14 +111,14 @@ class WaitOperation(Operation):
         uuids of its network substances and itself.
         '''
         self['rows'] = list()
-        for row_name, row_value in row_dict.iteritems():
+        for row_name, row_value in list(row_dict.items()):
             row = dict()
             row[row_name] = list()
             if len(row_value) == 1:
-                [row[row_name].extend(["uuid", uuid]) for uuid in row_value.iterkeys()]
+                [row[row_name].extend(["uuid", uuid]) for uuid in list(row_value.keys())]
             else:
                 row[row_name].extend(['set', []])
-                [row[row_name][1].extend([["uuid", uuid]]) for uuid in row_value.iterkeys()]
+                [row[row_name][1].extend([["uuid", uuid]]) for uuid in list(row_value.keys())]
             self['rows'].append(row)
 
 
@@ -137,10 +137,10 @@ class InsertOperation(Operation):
     @row.setter
     def row(self, row_dict):
         self['row'] = dict()
-        for column, value in row_dict.iteritems():
+        for column, value in list(row_dict.items()):
             if column in ['ports', 'interfaces']:
                 self['row'][column] = list()
-                for entry in value.itervalues():
+                for entry in list(value.values()):
                     self['row'][column].append('named-uuid')
                     self['row'][column].append(entry.uuid_name)
             else:
@@ -200,7 +200,7 @@ class MutateOperation(Operation):
 
     @mutation.setter
     def mutation(self, operation):
-        assert type(operation) in [str, unicode]
+        assert type(operation) in [str, str]
         assert len(operation) == 2
         assert operation in ["+=", "-=", "*=", "/=", "%="]
         if len(self.mutations) == 0:
@@ -213,7 +213,7 @@ class MutateOperation(Operation):
 
     @column.setter
     def column(self, col):
-        assert type(col) in [str, unicode]
+        assert type(col) in [str, str]
         assert col in dir(self.instance)
         if len(self.mutations) == 0:
             self.mutations.append([None, None, None])
@@ -271,12 +271,12 @@ class UpdateOperation(Operation):
 
     @row.setter
     def row(self, row_dict):
-        for column, value in row_dict.iteritems():
+        for column, value in list(row_dict.items()):
             if column == 'name':
                 continue
             elif column in ['ports', 'interfaces', 'bridges']:
                 self['row'][column] = ['set', []]
-                for entry_id, entry in value.iteritems():
+                for entry_id, entry in list(value.items()):
                     if entry_id[:3] == 'row':
                         self['row'][column][1].append(['named-uuid', entry.uuid_name])
                     else:
@@ -310,9 +310,9 @@ class UpdateOperation(Operation):
         target = ['uuid', value.uuid]
         condition = ['_uuid', '==', target]
         self['where'].append(condition)
-        if self.up_col and type(self.up_col) in [str, unicode]:
+        if self.up_col and type(self.up_col) in [str, str]:
             self.row = {self.up_col: value.columns[self.up_col]}
-        elif self.up_col and type(self.up_col) is list:
+        elif self.up_col and isinstance(self.up_col, list):
             rows = []
             for col in self.up_col:
                 rows.append((col, value.columns[col]))

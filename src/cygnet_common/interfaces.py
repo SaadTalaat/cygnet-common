@@ -96,7 +96,7 @@ class openvswitch(dict):
 
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
-            keys = [key for key, value in self.tunnel_bucket.iteritems() if value is None]
+            keys = [key for key, value in list(self.tunnel_bucket.items()) if value is None]
             if keys:
                 available = keys[0]
                 self.tunnel_bucket[available] = endpoint
@@ -112,7 +112,7 @@ class openvswitch(dict):
                 endpoint = self.endpoints[e]
             else:
                 endpoint = e
-            tunnel_idx = [idx for idx, ep in self.tunnel_bucket.iteritems() if ep == endpoint]
+            tunnel_idx = [idx for idx, ep in list(self.tunnel_bucket.items()) if ep == endpoint]
             if tunnel_idx:
                 tunnel_idx = tunnel_idx[0]
             else:
@@ -130,7 +130,7 @@ class openvswitch(dict):
                 self.range_buckets[addr_idx] = containerId
                 run("pipework br2 -i eth1 " + containerId + " " + addr)
             else:
-                print("Error connecting container", containerId + ": Address Already taken by container: ", self.range_buckets[addr_idx])
+                print(("Error connecting container", containerId + ": Address Already taken by container: ", self.range_buckets[addr_idx]))
 
     def disconnectContainer(self, *containers):
         for c in containers:

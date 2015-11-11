@@ -1,5 +1,5 @@
 from cygnet_common.jsonrpc.OpenvSwitchTables import InterfaceTable
-from cygnet_common.jsonrpc.types import OVSMap
+from cygnet_common.jsonrpc.OVSTypes import OVSMap
 from uuid import uuid1
 
 
@@ -17,15 +17,15 @@ class OVSInterface(object):
 
     @classmethod
     def parse(cls, state, uuid, interface_dict):
-        assert type(interface_dict) is dict
+        assert isinstance(interface_dict, dict)
         assert len(interface_dict) > 0
-        assert type(uuid) in [str, unicode]
+        assert type(uuid) in [str, bytes]
         interface = cls()
         interface.uuid = uuid
-        for row_state, columns in interface_dict.iteritems():
+        for row_state, columns in list(interface_dict.items()):
             # XXX: Handle old states
             if row_state == 'new':
-                for column, value in columns.iteritems():
+                for column, value in list(columns.items()):
                     setattr(interface, column, value)
         return interface
 
@@ -35,7 +35,7 @@ class OVSInterface(object):
 
     @name.setter
     def name(self, value):
-        if type(value) in [str, unicode]:
+        if type(value) in [str, bytes]:
             self.columns['name'] = value
         elif not value:
             self.columns['name'] = ''
@@ -48,7 +48,7 @@ class OVSInterface(object):
 
     @type.setter
     def type(self, value):
-        if type(value) in [str, unicode]:
+        if type(value) in [str, bytes]:
             self.columns['type'] = value
         elif not value:
             self.columns['type'] = ''
@@ -66,7 +66,7 @@ class OVSInterface(object):
         elif not value:
             self.columns['options'] = OVSMap()
         else:
-            print(type(value))
+            print((type(value)))
             raise TypeError("value must be a list")
 
     @property
@@ -75,7 +75,7 @@ class OVSInterface(object):
 
     @mac.setter
     def mac(self, value):
-        if type(value) is list:
+        if isinstance(value, list):
             self.columns['mac'] = value
         elif not value:
             self.columns['mac'] = ['set', []]

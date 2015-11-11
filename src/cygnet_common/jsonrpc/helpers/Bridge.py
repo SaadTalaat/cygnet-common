@@ -17,8 +17,8 @@ class OVSBridge(object):
 
     @classmethod
     def parse(cls, state, uuid, bridge_dict):
-        assert type(uuid) in [str, unicode]
-        assert type(bridge_dict) is dict
+        assert type(uuid) in [str, bytes]
+        assert isinstance(bridge_dict, dict)
         assert len(bridge_dict) > 0
         bridge = cls()
         bridge.state = state
@@ -26,9 +26,9 @@ class OVSBridge(object):
         bridge.ports = dict()
 
         ports = []
-        for row_state, columns in bridge_dict.iteritems():
+        for row_state, columns in list(bridge_dict.items()):
             if row_state == 'new':
-                for column, value in columns.iteritems():
+                for column, value in list(columns.items()):
                     if column == 'ports' and value[0] == 'set':
                         [ports.extend(val) for val in value[1]]
                         ports = [port for port in ports if port != 'uuid']
@@ -50,7 +50,7 @@ class OVSBridge(object):
 
     @name.setter
     def name(self, value):
-        if type(value) in [str, unicode]:
+        if type(value) in [str, bytes]:
             self.columns['name'] = value
         elif not value:
             self.columns['name'] = ''
@@ -63,9 +63,9 @@ class OVSBridge(object):
 
     @ports.setter
     def ports(self, value):
-        if type(value) is dict:
+        if isinstance(value, dict):
             self.columns['ports'] = value
-        elif type(value) is list:
+        elif isinstance(value, list):
             for iface in value:
                 self.columns['ports'][iface.uuid] = iface
         elif not value:
@@ -79,7 +79,7 @@ class OVSBridge(object):
 
     @controller.setter
     def controller(self, value):
-        if type(value) is list:
+        if isinstance(value, list):
             self.columns['controller'] = value
         elif not value:
             self.columns['controller'] = ['set', []]
@@ -92,7 +92,7 @@ class OVSBridge(object):
 
     @fail_mode.setter
     def fail_mode(self, value):
-        if type(value) is list:
+        if isinstance(value, list):
             self.columns['fail_mode'] = value
         elif not value:
             self.columns['fail_mode'] = ['set', []]
@@ -108,6 +108,6 @@ class OVSBridge(object):
         if not val:
             self.columns['stp_enable'] = False
             return
-        elif type(val) is not bool:
+        elif not isinstance(val, bool):
             raise TypeError('value must be bool')
         self.columns['stp_enable'] = val

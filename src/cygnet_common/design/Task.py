@@ -14,6 +14,6 @@ class TaskInterval(threading.Thread):
         while True:
             time.sleep(self.interval)
             if self.args:
-                apply(self.task, self.args)
+                self.task(*self.args)
             else:
-                apply(self.task)
+                self.task()
