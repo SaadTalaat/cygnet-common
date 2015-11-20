@@ -83,6 +83,10 @@ class OpenvSwitchClient(object):
 
     def update_notification(self, response):
         if 'method' in response and response['method'] == 'update':
+            print ()
+            print("UPDATE NOTIFICATION")
+            print(response)
+            print ()
             self.ovs_state.update(response)
             return None
         return response

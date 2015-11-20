@@ -35,7 +35,7 @@ class openvswitch(dict):
         self['containers'] = kwargs['containers']
         self['interfaces'] = kwargs['interfaces']
         self['internal_ip'] = kwargs['internal_ip']
-        self['external_ip'] = kwargs['external_ip']
+        self['external_iface'] = kwargs['external_iface']
         # Add callbacks
         #
         # Should read database here
@@ -45,7 +45,7 @@ class openvswitch(dict):
         self.ovs_client.getState([OpenvSwitchTable(),
                                   BridgeTable(),
                                   PortTable(),
-                                  InterfaceTable])
+                                  InterfaceTable()])
 
     def __getattribute__(self, key, *args):
         try:
@@ -75,16 +75,30 @@ class openvswitch(dict):
                 raise e
 
     def __ovs_setup(self):
-        ip = IPDB()
-        ifaces = ip.interfaces
         if not self.ovs_client.bridgeExists('cygnet0'):
             self.ovs_client.addBridge('cygnet0')
             self.ovs_client.addPort('cygnet0', self.external_iface)
-            ifaces.cygnet0.begin()
-            addr = self.external_ip.split("/")
-            ifaces.cygnet0.add_ip(addr[0], int(addr[1]))
-            ifaces.cygnet0.up()
-            ifaces.cygnet0.commit()
+        elif not self.ovs_client.portExists(self.external_iface):
+            self.ovs_client.addPort('cygnet0', self.external_iface)
+        ip = IPDB()
+        ifaces = ip.interfaces
+        ifaces.cygnet0.begin()
+        addrs= ip.interfaces[self.external_iface].ipaddr.raw
+        addr = None
+        for address, attrs in addrs.items():
+            if __getIPv4Addr__([address]) == None:
+                continue
+            addr = address
+        ifaces.cygnet0.add_ip(addr[0], int(addr[1]))
+        ifaces.cygnet0.up()
+        ifaces.cygnet0.commit()
+        ifaces[self.external_iface].begin()
+        ifaces[self.external_iface].down()
+        ifaces[self.external_iface].commit()
+
+        ifaces[self.external_iface].begin()
+        ifaces[self.external_iface].up()
+        ifaces[self.external_iface].commit()
 
         if not self.ovs_client.bridgeExists('cygnet_internal'):
             self.ovs_client.addBridge('cygnet_internal')
@@ -95,6 +109,7 @@ class openvswitch(dict):
 
     def initalize(self):
         # check if our setup already exists
+        self.__ovs_setup()
         ip = IPDB()
         try:
             # Check if public interface is up

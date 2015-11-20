@@ -42,16 +42,17 @@ class OVSMap(list):
 class OVSSet(list):
 
     def __init__(self, l=None):
+        print(isinstance(l, list))
         if isinstance(l, list):
             if len(l) > 1:
-                self[0] = 'set'
+                list.append(self, 'set')
             for member in l:
                 if member == 'set':
                     continue
-                self.append(member)
-        if not l:
+                self.append(OVSAtom(member))
+        elif not l:
             self.append('set')
-            self.append([])
+            self.append(OVSAtom([]))
         else:
             raise TypeError("Value must be a list of OVSAtoms")
 

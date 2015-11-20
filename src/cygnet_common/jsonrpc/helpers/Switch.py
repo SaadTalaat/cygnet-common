@@ -22,8 +22,11 @@ class OVSwitch(object):
                 for column, value in list(columns.items()):
                     if column == 'bridges':
                         bridges = []
-                        [bridges.extend(val) for val in value[1]]
-                        bridges = [bridge for bridge in bridges if bridge != 'uuid']
+                        if value[0] == 'set':
+                            [bridges.extend(val) for val in value[1]]
+                            bridges = [bridge for bridge in bridges if bridge != 'uuid']
+                        else:
+                            bridges = [bridge for bridge in value if bridge != 'uuid']
                     else:
                         state[column] = value
                         switch.columns[column] = value

@@ -62,7 +62,6 @@ class OpenvSwitchState(BaseDict):
             updates = response['params'][1]
         else:
             raise NotImplementedError("Invalid updates")
-
         if 'Interface' in updates:
             self.__update_Interface(updates['Interface'])
             del updates['Interface']
@@ -151,8 +150,19 @@ class OpenvSwitchState(BaseDict):
             self.ports[uuid] = OVSPort.parse(self, uuid, table_states)
 
     def __update_Bridge(self, result):
+        print()
+        print('======================')
+        print('======================')
+        print(result)
+        print('======================')
+        print(self.bridges)
+        print('======================')
         for uuid, table_states in list(result.items()):
             self.bridges[uuid] = OVSBridge.parse(self, uuid, table_states)
+        print(self.bridges)
+        print('======================')
+        print('======================')
+        print()
 
     def __update_OpenvSwitch(self, result):
         for uuid, table_states in list(result.items()):
