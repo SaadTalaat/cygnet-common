@@ -1,5 +1,8 @@
 from pyroute2 import IPRoute, IPDB
 from sarge import run
+from cygnet_common.jsonrpc.OpenvSwitchClient import OpenvSwitchClient
+from cygnet_common.jsonrpc.OpenvSwitchTables import OpenvSwitchTable, BridgeTable, PortTable, InterfaceTable
+from cygnet_common.jsonrpc.OVSTypes import OVSAtom
 
 
 def __getIPv4Addr__(addr_list):
@@ -32,10 +35,17 @@ class openvswitch(dict):
         self['containers'] = kwargs['containers']
         self['interfaces'] = kwargs['interfaces']
         self['internal_ip'] = kwargs['internal_ip']
+        self['external_ip'] = kwargs['external_ip']
         # Add callbacks
         #
         # Should read database here
-        #
+        # Initialize database client
+        self.ovs_client = OpenvSwitchClient('unix:///var/run/openvswitch/db.sock')
+        # Tables we shall operate on
+        self.ovs_client.getState([OpenvSwitchTable(),
+                                  BridgeTable(),
+                                  PortTable(),
+                                  InterfaceTable])
 
     def __getattribute__(self, key, *args):
         try:
@@ -64,15 +74,35 @@ class openvswitch(dict):
             else:
                 raise e
 
+    def __ovs_setup(self):
+        ip = IPDB()
+        ifaces = ip.interfaces
+        if not self.ovs_client.bridgeExists('cygnet0'):
+            self.ovs_client.addBridge('cygnet0')
+            self.ovs_client.addPort('cygnet0', self.external_iface)
+            ifaces.cygnet0.begin()
+            addr = self.external_ip.split("/")
+            ifaces.cygnet0.add_ip(addr[0], int(addr[1]))
+            ifaces.cygnet0.up()
+            ifaces.cygnet0.commit()
+
+        if not self.ovs_client.bridgeExists('cygnet_internal'):
+            self.ovs_client.addBridge('cygnet_internal')
+            self.ovs_client.setBridgeProperty('cygnet_internal',
+                                              'stp_enable',
+                                              True)
+        ip.release()
+
     def initalize(self):
+        # check if our setup already exists
         ip = IPDB()
         try:
             # Check if public interface is up
-            self.addr = __getIPv4Addr__(list(ip.interfaces.br1.ipaddr))
+            self.addr = __getIPv4Addr__(list(ip.interfaces.cygnet0.ipaddr))
             self.addr = self.addr[0], str(self.addr[1])
-            self.interfaces.append(('br1', self.addr))
+            self.interfaces.append(('cygnet0', self.addr))
         except Exception as e:
-            print(e)
+            raise e
         finally:
             ip.release()
         self.range_buckets[int(self.addr[0].split(".")[-1])] = 1
@@ -86,12 +116,13 @@ class openvswitch(dict):
         except KeyError as e:
             print("OpenvSwitch: CYGNET_INTERNAL_IP environment variable not found")
             raise e
-        ip.addr('add',
-                index=(ip.link_lookup(ifname='br2')),
-                address=addr,
-                mask=mask)
-        run("ifconfig br2 up")
-        self.interfaces.append(('br2', (self.addr, str(mask))))
+        ifaces = ip.interfaces
+        ifaces.cygnet_internal.begin()
+        ifaces.cygnet_internal.add_ip(addr, mask)
+        ifaces.cygnet_internal.up()
+        ifaces.cygnet_internal.commit()
+        ip.realease()
+        self.interfaces.append(('cygnet_internal', (self.addr, str(mask))))
         return addr
 
     def addEndpoint(self, *endpoints):
@@ -102,8 +133,17 @@ class openvswitch(dict):
                 self.tunnel_bucket[available] = endpoint
             else:
                 raise IndexError
-            run("ovs-vsctl add-port br2 gre" + str(available) +
-                " -- set Interface gre" + str(available) + " type=gre options:remote_ip=" + (endpoint))
+            iface_name = 'gre' + str(available)
+            self.ovs_client.addPort(iface_name)
+            iface = self.ovs_client.getInterface(iface_name)
+            iface.options.append(OVSAtom['remote_ip', endpoint])
+            iface.type = 'gre'
+            self.ovs_client.setInterfaceProperty(iface_name, 'type', iface.type)
+            self.ovs_client.setInterfaceProperty(iface_name,
+                                                 'options',
+                                                 iface.options)
+            # run("ovs-vsctl add-port br2 gre" + str(available) +
+            # " -- set Interface gre" + str(available) + " type=gre options:remote_ip=" + (endpoint))
 
     def removeEndpoint(self, *endpoints):
         for e in endpoints:
@@ -117,7 +157,9 @@ class openvswitch(dict):
                 tunnel_idx = tunnel_idx[0]
             else:
                 raise ValueError
-            run("ovs-vsctl del-port gre"+str(tunnel_idx))
+            iface_name = 'gre' + str(tunnel_idx)
+            self.ovs_client.removePort(iface_name)
+            # run("ovs-vsctl del-port gre"+str(tunnel_idx))
             self.tunnel_bucket[tunnel_idx] = None
 
     def connectContainer(self, *containers):
