@@ -24,7 +24,7 @@ def read(*names, **kwargs):
 
 setup(
     name='cygnet_common',
-    version='0.1.0',
+    version='0.1.1',
     license='NA',
     # license='BSD',
     description='Common code used in the Cygnet project.',

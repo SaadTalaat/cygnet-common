@@ -6,3 +6,7 @@ Changelog
 -----------------------------------------
 
 * First publicly visibile code.
+
+0.1.1 (2015-11-16)
+-----------------------------------------
+* Adding string type unification
