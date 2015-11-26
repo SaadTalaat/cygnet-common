@@ -1,4 +1,4 @@
-from pyroute2 import IPRoute, IPDB
+from pyroute2 import IPDB
 from sarge import run
 from cygnet_common.jsonrpc.OpenvSwitchClient import OpenvSwitchClient
 from cygnet_common.jsonrpc.OpenvSwitchTables import OpenvSwitchTable, BridgeTable, PortTable, InterfaceTable
@@ -100,11 +100,6 @@ class openvswitch(dict):
         ifaces[self.external_iface].up()
         ifaces[self.external_iface].commit()
 
-        if not self.ovs_client.bridgeExists('cygnet_internal'):
-            self.ovs_client.addBridge('cygnet_internal')
-            self.ovs_client.setBridgeProperty('cygnet_internal',
-                                              'stp_enable',
-                                              True)
         ip.release()
 
     def initalize(self):
@@ -123,23 +118,56 @@ class openvswitch(dict):
         self.range_buckets[int(self.addr[0].split(".")[-1])] = 1
         return self.addr
 
-    def initContainerNetwork(self):
-        ip = IPRoute()
-        try:
-            addr = self['internal_ip'].split('/')[0]
-            mask = int(self['internal_ip'].split('/')[1])
-        except KeyError as e:
-            print("OpenvSwitch: CYGNET_INTERNAL_IP environment variable not found")
-            raise e
-        ifaces = ip.interfaces
-        ifaces.cygnet_internal.begin()
-        ifaces.cygnet_internal.add_ip(addr, mask)
-        ifaces.cygnet_internal.up()
-        ifaces.cygnet_internal.commit()
-        ip.realease()
-        self.interfaces.append(('cygnet_internal', (self.addr, str(mask))))
-        return addr
+    # initContainerNetwork should support both docker < 1.9.0
+    # and docker <= 1.9.0
+    # - name and network configurations should only be passed
+    #   by docker plugin
+    # - Otherwise, we are operating on a single internal network
+    #   which is only useed by docker < 1.9.0 powerstrip adapter
 
+    def initContainerNetwork(self, iface_id=None, config=None):
+        if not iface_id or not config:
+            try:
+                iface_name = "cygnet_internal"
+                if not self.ovs_client.bridgeExists('cygnet_internal'):
+                    self.ovs_client.addBridge('cygnet_internal')
+                    self.ovs_client.setBridgeProperty('cygnet_internal',
+                                                      'stp_enable',
+                                                      True)
+                addr = self['internal_ip'].split('/')[0]
+                mask = int(self['internal_ip'].split('/')[1])
+            except KeyError as e:
+                print("OpenvSwitch: CYGNET_INTERNAL_IP \
+                        environment variable not found")
+                raise e
+        else:
+            iface_name = "cygnet_" + iface_id[:8]
+            if not self.ovs_client.bridgeExists(iface_name):
+                self.ovs_client.addBridge(iface_name)
+                self.ovs_client.setBridgeProperty(iface_name,
+                                                  'stp_enable',
+                                                  True)
+            addr = config['Gateway'].split('/')[0]
+            mask = int(config['Gateway'].split('/')[1])
+        ip = IPDB()
+        ifaces = ip.interfaces
+        ifaces[iface_name].begin()
+        ifaces[iface_name].add_ip(addr, mask)
+        ifaces[iface_name].up()
+        ifaces[iface_name].commit()
+        ip.release()
+        self.interfaces.append((iface_name, (self.addr, str(mask))))
+        return iface_name
+
+    def destroyContainerNetwork(self, name):
+        if self.ovs_client.bridgeExists(name):
+            self.ovs_client.removeBridge(name)
+            match = [iface for iface in self.interfaces if iface[0] == name]
+            for entry in match:
+                self.interfaces.remove(entry)
+            return True
+        else:
+            return False
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
             keys = [key for key, value in list(self.tunnel_bucket.items()) if value is None]

@@ -83,10 +83,6 @@ class OpenvSwitchClient(object):
 
     def update_notification(self, response):
         if 'method' in response and response['method'] == 'update':
-            print ()
-            print("UPDATE NOTIFICATION")
-            print(response)
-            print ()
             self.ovs_state.update(response)
             return None
         return response
@@ -119,12 +115,13 @@ class OpenvSwitchClient(object):
         transaction.addOperation(MutateOperation(switch, 'next_cfg', '+='))
         self.sock.send(bytes(json.dumps(transaction), 'utf-8'))
         del switch.bridges[bridge.uuid]
-        responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
-        print(responses)
-        for response in responses:
-            res = json.loads(response)
-            transaction.handleResult(res)
-            self.update_notification(res)
+        handled = False
+        while not handled:
+            responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
+            for response in responses:
+                res = json.loads(response)
+                handled = transaction.handleResult(res)
+                self.update_notification(res)
         self.cur_id += 1
 
     def removeBridge(self, bridge_name):
@@ -283,7 +280,6 @@ class OpenvSwitchClient(object):
     def setInterfaceProperty(self, interface_name, option, value):
         interface = self.getInterface(interface_name)
         if hasattr(interface, option):
-            print(('VALUE', value))
             setattr(interface, option, value)
 
         t = Transaction(self.cur_id)
@@ -291,7 +287,6 @@ class OpenvSwitchClient(object):
         t.addOperation(MutateOperation(self.ovs_state.switch, 'next_cfg', '+='))
         self.sock.send(bytes(json.dumps(t), 'utf-8'))
         responses = self.get_responses(self.sock.recv(self.BUFF_SIZE))
-        print(("OPTIONS:", interface.columns))
         for response in responses:
             res = json.loads(response)
             t.handleResult(res)

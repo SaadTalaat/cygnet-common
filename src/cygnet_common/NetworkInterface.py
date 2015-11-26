@@ -65,9 +65,11 @@ class NetworkInterface(dict):
     def initalize(self):
         return self.network.initalize()
 
-    def initContainerNetwork(self):
-        return self.network.initContainerNetwork()
+    def initContainerNetwork(self,name=None, config=None):
+        return self.network.initContainerNetwork(name,config)
 
+    def destroyContainerNetwork(self, name):
+        return self.network.destroyContainerNetwork(name)
     # Functionality oriented methods #####
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:

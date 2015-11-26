@@ -28,14 +28,13 @@ class Transaction(BaseDict):
 
     def handleResult(self, response):
         if 'result' not in response:
-            return
-        print(response)
+            return False
         result = response['result']
         if 'error' in result[-1]:
             raise OVSExceptions.OVSTransactionFailed(result)
         for index, param in enumerate(self.params[1:]):
             param.handleResult(result[index])
-
+        return True
 
 class Operation(BaseDict):
 
