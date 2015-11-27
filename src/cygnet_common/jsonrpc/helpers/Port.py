@@ -30,6 +30,9 @@ class OVSPort(object):
                         interfaces = [i for i in value if i != 'uuid']
                     else:
                         setattr(port, column, value)
+        print("++++PORT++++++")
+        print(port.columns)
+        print("_+++++++++++++")
         for iface in interfaces:
             try:
                 port.interfaces[iface] = state.interfaces[iface]

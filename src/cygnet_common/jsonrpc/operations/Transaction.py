@@ -29,8 +29,10 @@ class Transaction(BaseDict):
     def handleResult(self, response):
         if 'result' not in response:
             return False
+        elif response['id'] != self['id']:
+            return False
         result = response['result']
-        if 'error' in result[-1]:
+        if len(result) != 0 and 'error' in result[-1]:
             raise OVSExceptions.OVSTransactionFailed(result)
         for index, param in enumerate(self.params[1:]):
             param.handleResult(result[index])
