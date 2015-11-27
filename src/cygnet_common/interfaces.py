@@ -3,7 +3,7 @@ from sarge import run
 from cygnet_common.jsonrpc.OpenvSwitchClient import OpenvSwitchClient
 from cygnet_common.jsonrpc.OpenvSwitchTables import OpenvSwitchTable, BridgeTable, PortTable, InterfaceTable
 from cygnet_common.jsonrpc.OVSTypes import OVSAtom
-
+from cygnet_common.generic.Network import Network
 
 def __getIPv4Addr__(addr_list):
     '''
@@ -30,7 +30,9 @@ class openvswitch(dict):
         self.interface = interface
         for i in range(1, 255):
             self.tunnel_bucket[i] = None
+            # Only used by cygnet_internal (docker < 1.9.0)
             self.range_buckets[i] = None
+
         self['endpoints'] = kwargs['endpoints']
         self['containers'] = kwargs['containers']
         self['interfaces'] = kwargs['interfaces']
@@ -125,49 +127,46 @@ class openvswitch(dict):
     # - Otherwise, we are operating on a single internal network
     #   which is only useed by docker < 1.9.0 powerstrip adapter
 
-    def initContainerNetwork(self, iface_id=None, config=None):
-        if not iface_id or not config:
+    def initContainerNetwork(self, network=None):
+        if not network:
             try:
-                iface_name = "cygnet_internal"
-                if not self.ovs_client.bridgeExists('cygnet_internal'):
-                    self.ovs_client.addBridge('cygnet_internal')
-                    self.ovs_client.setBridgeProperty('cygnet_internal',
+                network = Network(None)
+                network.name = 'cygnet_internal'
+                network.address = self['internal_ip']
+                if not self.ovs_client.bridgeExists(network.name):
+                    self.ovs_client.addBridge(network.name)
+                    self.ovs_client.setBridgeProperty(network.name,
                                                       'stp_enable',
                                                       True)
-                addr = self['internal_ip'].split('/')[0]
-                mask = int(self['internal_ip'].split('/')[1])
             except KeyError as e:
                 print("OpenvSwitch: CYGNET_INTERNAL_IP \
                         environment variable not found")
                 raise e
         else:
-            iface_name = "cygnet_" + iface_id[:8]
-            if not self.ovs_client.bridgeExists(iface_name):
-                self.ovs_client.addBridge(iface_name)
-                self.ovs_client.setBridgeProperty(iface_name,
+            network.name = "cygnet_" + network.id[:8]
+            if not self.ovs_client.bridgeExists(network.name):
+                self.ovs_client.addBridge(network.name)
+                self.ovs_client.setBridgeProperty(network.name,
                                                   'stp_enable',
                                                   True)
-            addr = config['Gateway'].split('/')[0]
-            mask = int(config['Gateway'].split('/')[1])
         ip = IPDB()
         ifaces = ip.interfaces
-        ifaces[iface_name].begin()
-        ifaces[iface_name].add_ip(addr, mask)
-        ifaces[iface_name].up()
-        ifaces[iface_name].commit()
+        ifaces[network.name].begin()
+        ifaces[network.name].add_ip(network.address, network.mask)
+        ifaces[network.name].up()
+        ifaces[network.name].commit()
         ip.release()
-        self.interfaces.append((iface_name, (self.addr, str(mask))))
-        return iface_name
+        self.interfaces.append(network)
+        return network
 
-    def destroyContainerNetwork(self, name):
-        if self.ovs_client.bridgeExists(name):
-            self.ovs_client.removeBridge(name)
-            match = [iface for iface in self.interfaces if iface[0] == name]
-            for entry in match:
-                self.interfaces.remove(entry)
+    def destroyContainerNetwork(self, network):
+        if self.ovs_client.bridgeExists(network.name):
+            self.ovs_client.removeBridge(network.name)
+            self.interfaces.remove(network)
             return True
         else:
             return False
+
     def addEndpoint(self, *endpoints):
         for endpoint in endpoints:
             keys = [key for key, value in list(self.tunnel_bucket.items()) if value is None]
@@ -185,8 +184,6 @@ class openvswitch(dict):
             self.ovs_client.setInterfaceProperty(iface_name,
                                                  'options',
                                                  iface.options)
-            # run("ovs-vsctl add-port br2 gre" + str(available) +
-            # " -- set Interface gre" + str(available) + " type=gre options:remote_ip=" + (endpoint))
 
     def removeEndpoint(self, *endpoints):
         for e in endpoints:
@@ -207,15 +204,19 @@ class openvswitch(dict):
 
     def connectContainer(self, *containers):
         for container in containers:
-            addr = str(container["Address"])
-            containerId = str(container["Id"])
-            addr_idx = int(addr.split("/")[0].split(".")[-1])
-            available = (self.range_buckets[addr_idx] is None)
-            if available:
-                self.range_buckets[addr_idx] = containerId
-                run("pipework br2 -i eth1 " + containerId + " " + addr)
+            if container['Interface']:
+                network = container['Interface']
+                run("pipework "+ network.name + " -i eth1 " + str(container.id)+ " " + container["Address"])
+                return
             else:
-                print(("Error connecting container", containerId + ": Address Already taken by container: ", self.range_buckets[addr_idx]))
+                addr = str(container.address)
+                addr_idx = int(addr.split("/")[0].split(".")[-1])
+                available = (self.range_buckets[addr_idx] is None)
+            if available:
+                self.range_buckets[addr_idx] = container.id
+                run("pipework br2 -i eth1 " + container.id + " " + addr)
+            else:
+                print(("Error connecting container", container.id + ": Address Already taken by container: ", self.range_buckets[addr_idx]))
 
     def disconnectContainer(self, *containers):
         for c in containers:
@@ -223,6 +224,9 @@ class openvswitch(dict):
                 container = self.containers[c]
             else:
                 container = c
-            addr = str(container["Address"])
-            addr_idx = int(addr.split("/")[0].split(".")[-1])
-            self.range_buckets[addr_idx] = None
+            if container['Interface']:
+                container['Interface'].detachContainer(container)
+            else:
+                addr = str(container["Address"])
+                addr_idx = int(addr.split("/")[0].split(".")[-1])
+                self.range_buckets[addr_idx] = None
