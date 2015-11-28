@@ -1,4 +1,4 @@
-from cygnet_commmon.Structures import BaseDict
+from cygnet_common.Structures import BaseDict
 
 class Container(BaseDict):
     def __init__(self, Id, node):
@@ -7,6 +7,7 @@ class Container(BaseDict):
         self["State"] = 0
         self["Address"] = None
         self["Interface"] = []
+        self["Name"] = None
 
     def attachToInterface(self, iface):
         self["Interface"] = iface
@@ -47,3 +48,13 @@ class Container(BaseDict):
         if type(value) is not str:
             raise TypeError("error: container address must be a string")
         self.Address = value
+
+    @property
+    def name(self):
+        return self.Name
+
+    @name.setter
+    def name(self, val):
+        if type(val) is not str:
+            raise TypeError("error: container name must be a string")
+        self.Name = val
