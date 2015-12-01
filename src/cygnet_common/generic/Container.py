@@ -1,7 +1,14 @@
 from cygnet_common.Structures import BaseDict
+from cygnet_common.strtypes import unicode
 
 class Container(BaseDict):
     def __init__(self, Id, node):
+        if type(Id) not in [str, unicode, bytes]:
+            raise TypeError("Container Id must be a string")
+        if type(Id) is bytes and bytes is not str:
+            Id = Id.decode('utf-8')
+        elif type(Id) is unicode and unicode is not str:
+            Id = Id.encode('utf-8')
         self["Id"] = Id
         self["Node"] = node
         self["State"] = 0
@@ -45,8 +52,12 @@ class Container(BaseDict):
 
     @address.setter
     def address(self, value):
-        if type(value) is not str:
-            raise TypeError("error: container address must be a string")
+        if type(value) not in [str, unicode, bytes]:
+            raise TypeError("Container Address must be a string")
+        if type(value) is bytes and bytes is not str:
+            value = value.decode('utf-8')
+        elif type(value) is unicode and unicode is not str:
+            value = value.encode('utf-8')
         self['Address'] = value
 
     @property
@@ -54,7 +65,13 @@ class Container(BaseDict):
         return self.Name
 
     @name.setter
-    def name(self, val):
-        if type(val) is not str:
+    def name(self, value):
+        if type(value) not in [str, unicode, bytes]:
+            raise TypeError("Container Name must be a string")
+        if type(value) is bytes and bytes is not str:
+            value = value.decode('utf-8')
+        elif type(value) is unicode and unicode is not str:
+            value = value.encode('utf-8')
+        if type(value) is not str:
             raise TypeError("error: container name must be a string")
-        self['Name'] = val
+        self['Name'] = value

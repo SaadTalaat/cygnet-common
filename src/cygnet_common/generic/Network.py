@@ -1,4 +1,5 @@
 from cygnet_common.Structures import BaseDict
+from cygnet_common.strtypes import unicode
 
 class Network(BaseDict):
     '''
@@ -9,6 +10,12 @@ class Network(BaseDict):
     '''
 
     def __init__(self, Id, **config):
+        if type(Id) not in [str, bytes, unicode]:
+            raise TypeError("Identification must be a string")
+        if type(Id)  is bytes and bytes is not str:
+            Id = Id.decode('utf-8')
+        elif type(Id) is unicode and unicode is not str:
+            Id = Id.encode('utf-8')
         self['Id'] = Id
         self['Name'] = None
         self['Address'] = None
@@ -80,9 +87,12 @@ class Network(BaseDict):
 
     @name.setter
     def name(self, value):
-        print("Type of value", type(value))
-        if type(value) is not str:
+        if type(value) not in [str, bytes, unicode]:
             raise TypeError("error: network name must be a string")
+        if type(value)  is bytes and bytes is not str:
+            value = value.decode('utf-8')
+        elif type(value) is unicode and unicode is not str:
+            value = value.encode('utf-8')
         self['Name'] = value
 
     @property
@@ -91,8 +101,12 @@ class Network(BaseDict):
 
     @address.setter
     def address(self, value):
-        if type(value) is not str:
+        if type(value) not in [str, bytes, unicode]:
             raise TypeError("error: network address must be a string")
+        if type(value)  is bytes and bytes is not str:
+            value = value.decode('utf-8')
+        elif type(value) is unicode and unicode is not str:
+            value = value.encode('utf-8')
         addr = value
         mask = self.mask
         if '/' in value:
@@ -107,6 +121,10 @@ class Network(BaseDict):
 
     @id.setter
     def id(self, value):
-        if type(value) is not str:
+        if type(value) not in [str, bytes, unicode]:
             raise TypeError("error: network id must be a string")
+        if type(value)  is bytes and bytes is not str:
+            value = value.decode('utf-8')
+        elif type(value) is unicode and unicode is not str:
+            value = value.encode('utf-8')
         self['Id'] = value
