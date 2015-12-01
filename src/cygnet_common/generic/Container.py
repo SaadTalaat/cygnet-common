@@ -18,9 +18,9 @@ class Container(BaseDict):
 
     def running(self, flag):
         if flag:
-            self.State = 1
+            self['State'] = 1
         else:
-            self.State = 0
+            self['State'] = 0
         return self.State
 
     @property
@@ -47,7 +47,7 @@ class Container(BaseDict):
     def address(self, value):
         if type(value) is not str:
             raise TypeError("error: container address must be a string")
-        self.Address = value
+        self['Address'] = value
 
     @property
     def name(self):
@@ -57,4 +57,4 @@ class Container(BaseDict):
     def name(self, val):
         if type(val) is not str:
             raise TypeError("error: container name must be a string")
-        self.Name = val
+        self['Name'] = val
