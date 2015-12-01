@@ -16,6 +16,7 @@ class Network(BaseDict):
         self.valid = False
         self.bucket = {}
         self.containers = []
+        self.mask = 32
         if config:
             self.configure(**config)
 
@@ -47,7 +48,7 @@ class Network(BaseDict):
                 idx -= 1
             self.bucket[tuple(key)] = None
         '''
-        self.Address = config['Gateway'].split("/")[0]
+        self['Address'] = config['Gateway'].split("/")[0]
         # Cross out gateway
         addr_key = self.addrToKey(self.Address)
         self.bucket[addr_key] = self
@@ -79,9 +80,10 @@ class Network(BaseDict):
 
     @name.setter
     def name(self, value):
+        print("Type of value", type(value))
         if type(value) is not str:
             raise TypeError("error: network name must be a string")
-        self.Name = value
+        self['Name'] = value
 
     @property
     def address(self):
@@ -96,7 +98,7 @@ class Network(BaseDict):
         if '/' in value:
             addr, mask = value.split("/")
             mask = int(mask)
-        self.Address = addr
+        self['Address'] = addr
         self.mask = mask
 
     @property
@@ -107,4 +109,4 @@ class Network(BaseDict):
     def id(self, value):
         if type(value) is not str:
             raise TypeError("error: network id must be a string")
-        self.Id = value
+        self['Id'] = value

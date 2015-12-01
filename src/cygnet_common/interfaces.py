@@ -112,7 +112,7 @@ class openvswitch(dict):
             # Check if public interface is up
             self.addr = __getIPv4Addr__(list(ip.interfaces.cygnet0.ipaddr))
             self.addr = self.addr[0], str(self.addr[1])
-            self.interfaces.append(('cygnet0', self.addr))
+            #self.interfaces.append(('cygnet0', self.addr))
         except Exception as e:
             raise e
         finally:
@@ -130,9 +130,11 @@ class openvswitch(dict):
     def initContainerNetwork(self, network=None):
         if not network:
             try:
+                print("trying..")
                 network = Network(None)
                 network.name = 'cygnet_internal'
                 network.address = self['internal_ip']
+                print("tried..")
                 if not self.ovs_client.bridgeExists(network.name):
                     self.ovs_client.addBridge(network.name)
                     self.ovs_client.setBridgeProperty(network.name,
@@ -150,6 +152,7 @@ class openvswitch(dict):
                                                   'stp_enable',
                                                   True)
         ip = IPDB()
+        print("Done",network)
         ifaces = ip.interfaces
         ifaces[network.name].begin()
         ifaces[network.name].add_ip(network.address, network.mask)
@@ -175,15 +178,16 @@ class openvswitch(dict):
                 self.tunnel_bucket[available] = endpoint
             else:
                 raise IndexError
-            iface_name = 'gre' + str(available)
-            self.ovs_client.addPort(iface_name)
-            iface = self.ovs_client.getInterface(iface_name)
-            iface.options.append(OVSAtom['remote_ip', endpoint])
-            iface.type = 'gre'
-            self.ovs_client.setInterfaceProperty(iface_name, 'type', iface.type)
-            self.ovs_client.setInterfaceProperty(iface_name,
-                                                 'options',
-                                                 iface.options)
+            for network in self.interfaces:
+                iface_name = 'gre' + str(available) + "_" + network.name.split("_")[1]
+                self.ovs_client.addPort(network.name, iface_name)
+                iface = self.ovs_client.getInterface(iface_name)
+                iface.options.append(OVSAtom(['remote_ip', endpoint]))
+                iface.type = 'gre'
+                self.ovs_client.setInterfaceProperty(iface_name, 'type', iface.type)
+                self.ovs_client.setInterfaceProperty(iface_name,
+                                                     'options',
+                                                     iface.options)
 
     def removeEndpoint(self, *endpoints):
         for e in endpoints:
