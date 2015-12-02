@@ -130,11 +130,9 @@ class openvswitch(dict):
     def initContainerNetwork(self, network=None):
         if not network:
             try:
-                print("trying..")
                 network = Network(None)
                 network.name = 'cygnet_internal'
                 network.address = self['internal_ip']
-                print("tried..")
                 if not self.ovs_client.bridgeExists(network.name):
                     self.ovs_client.addBridge(network.name)
                     self.ovs_client.setBridgeProperty(network.name,
@@ -152,7 +150,6 @@ class openvswitch(dict):
                                                   'stp_enable',
                                                   True)
         ip = IPDB()
-        print("Done",network)
         ifaces = ip.interfaces
         ifaces[network.name].begin()
         ifaces[network.name].add_ip(network.address, network.mask)
@@ -180,15 +177,19 @@ class openvswitch(dict):
                 raise IndexError
             for network in self.interfaces:
                 iface_name = 'gre' + str(available) + "_" + network.name.split("_")[1]
-                self.ovs_client.addPort(network.name, iface_name)
+                if not self.ovs_client.portExists(iface_name):
+                    self.ovs_client.addPort(network.name, iface_name)
                 iface = self.ovs_client.getInterface(iface_name)
+                for key in iface.options[1]:
+                    if isinstance(key, list):
+                        if key[0] == 'remote_ip':
+                            iface.options[1].remove(key)
                 iface.options.append(OVSAtom(['remote_ip', endpoint]))
                 iface.type = 'gre'
                 self.ovs_client.setInterfaceProperty(iface_name, 'type', iface.type)
                 self.ovs_client.setInterfaceProperty(iface_name,
                                                      'options',
                                                      iface.options)
-
     def removeEndpoint(self, *endpoints):
         for e in endpoints:
             endpoint = None
@@ -218,7 +219,7 @@ class openvswitch(dict):
                 available = (self.range_buckets[addr_idx] is None)
             if available:
                 self.range_buckets[addr_idx] = container.id
-                run("pipework br2 -i eth1 " + container.id + " " + addr)
+                run("pipework cygnet_internal -i eth1 " + container.id + " " + addr)
             else:
                 print(("Error connecting container", container.id + ": Address Already taken by container: ", self.range_buckets[addr_idx]))
 

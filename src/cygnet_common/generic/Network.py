@@ -10,7 +10,7 @@ class Network(BaseDict):
     '''
 
     def __init__(self, Id, **config):
-        if type(Id) not in [str, bytes, unicode]:
+        if Id and type(Id) not in [str, bytes, unicode]:
             raise TypeError("Identification must be a string")
         if type(Id)  is bytes and bytes is not str:
             Id = Id.decode('utf-8')
